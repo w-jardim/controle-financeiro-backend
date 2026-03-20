@@ -1,0 +1,36 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-financeiro
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "!061290058Th"
+      MYSQL_DATABASE: controlador_financeiro
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    container_name: financeiro-backend
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    command: npm run dev
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+  adminer:
+    image: adminer
+    container_name: adminer-financeiro
+    restart: always
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:
