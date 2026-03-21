@@ -28,6 +28,7 @@ app.get('/saude', (req, res) => {
   res.status(200).json({
     status: 'ok',
     mensagem: 'API do controlador financeiro está funcionando',
+    //mensagem: "AGORA ESTOU EM DEV 🔥",
     timestamp: new Date().toISOString()
   });
 });
