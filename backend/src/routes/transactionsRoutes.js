@@ -1,25 +1,26 @@
 const express = require('express');
-const router = express.Router();
+const roteador = express.Router();
 
 const validarTransacao = require('../middlewares/validarTransacao');
 const {
-  listarTransactions,
-  buscarTransactionPorId,
-  criarTransaction,
-  atualizarTransaction,
-  deletarTransaction,
-  resumoTransactions,
-  resumoMensalTransactions
+  listarTransacoes,
+  buscarTransacaoPorId,
+  criarTransacao,
+  atualizarTransacao,
+  deletarTransacao,
+  resumoTransacoes,
+  resumoMensalTransacoes
 } = require('../controllers/transactionsController');
 
+// Rotas de resumo (devem vir antes das rotas parametrizadas)
+roteador.get('/resumo/mensal', resumoMensalTransacoes);
+roteador.get('/resumo', resumoTransacoes);
 
-router.get('/resumo/mensal', resumoMensalTransactions);
-router.get('/resumo', resumoTransactions);
-router.get('/', listarTransactions);
-router.get('/:id', buscarTransactionPorId);
-router.post('/', validarTransacao, criarTransaction);
-router.put('/:id', validarTransacao, atualizarTransaction);
-router.delete('/:id', deletarTransaction);
+// Rotas de CRUD
+roteador.get('/', listarTransacoes);
+roteador.get('/:id', buscarTransacaoPorId);
+roteador.post('/', validarTransacao, criarTransacao);
+roteador.put('/:id', validarTransacao, atualizarTransacao);
+roteador.delete('/:id', deletarTransacao);
 
-
-module.exports = router;
+module.exports = roteador;

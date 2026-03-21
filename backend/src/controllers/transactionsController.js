@@ -1,51 +1,51 @@
 const conexao = require('../database');
 
-async function listarTransactions(req, res, next) {
+async function listarTransacoes(req, res, next) {
   try {
     const {
       tipo,
       descricao,
-      page = 1,
-      limit = 10,
-      sort = 'id',
-      order = 'asc'
+      pagina = 1,
+      limite = 10,
+      ordenar = 'id',
+      direcao = 'asc'
     } = req.query;
 
-    const pagina = Number(page);
-    const limite = Number(limit);
-    const offset = (pagina - 1) * limite;
+    const numeroPagina = Number(pagina);
+    const numeroLimite = Number(limite);
+    const deslocamento = (numeroPagina - 1) * numeroLimite;
 
-    if (isNaN(pagina) || pagina <= 0) {
+    if (isNaN(numeroPagina) || numeroPagina <= 0) {
       return res.status(400).json({
-        erro: 'Parâmetro page deve ser um número maior que zero'
+        erro: 'Parâmetro pagina deve ser um número maior que zero'
       });
     }
 
-    if (isNaN(limite) || limite <= 0) {
+    if (isNaN(numeroLimite) || numeroLimite <= 0) {
       return res.status(400).json({
-        erro: 'Parâmetro limit deve ser um número maior que zero'
+        erro: 'Parâmetro limite deve ser um número maior que zero'
       });
     }
 
     const camposPermitidos = ['id', 'tipo', 'descricao', 'valor', 'criado_em'];
-    if (!camposPermitidos.includes(sort)) {
+    if (!camposPermitidos.includes(ordenar)) {
       return res.status(400).json({
-        erro: 'Parâmetro sort inválido'
+        erro: 'Parâmetro ordenar inválido'
       });
     }
 
-    const direcao = order.toLowerCase();
-    if (!['asc', 'desc'].includes(direcao)) {
+    const direcaoFormatada = direcao.toLowerCase();
+    if (!['asc', 'desc'].includes(direcaoFormatada)) {
       return res.status(400).json({
-        erro: 'Parâmetro order deve ser asc ou desc'
+        erro: 'Parâmetro direcao deve ser asc ou desc'
       });
     }
 
-    let query = 'SELECT * FROM transactions';
-    let countQuery = 'SELECT COUNT(*) AS total FROM transactions';
+    let consulta = 'SELECT * FROM transacoes';
+    let consultaContagem = 'SELECT COUNT(*) AS total FROM transacoes';
     const filtros = [];
-    const params = [];
-    const countParams = [];
+    const parametros = [];
+    const parametrosContagem = [];
 
     if (tipo) {
       if (!['receita', 'despesa'].includes(tipo)) {
@@ -55,34 +55,34 @@ async function listarTransactions(req, res, next) {
       }
 
       filtros.push('tipo = ?');
-      params.push(tipo);
-      countParams.push(tipo);
+      parametros.push(tipo);
+      parametrosContagem.push(tipo);
     }
 
     if (descricao) {
       filtros.push('descricao LIKE ?');
-      params.push(`%${descricao}%`);
-      countParams.push(`%${descricao}%`);
+      parametros.push(`%${descricao}%`);
+      parametrosContagem.push(`%${descricao}%`);
     }
 
     if (filtros.length > 0) {
-      const whereClause = ` WHERE ${filtros.join(' AND ')}`;
-      query += whereClause;
-      countQuery += whereClause;
+      const clausulaWhere = ` WHERE ${filtros.join(' AND ')}`;
+      consulta += clausulaWhere;
+      consultaContagem += clausulaWhere;
     }
 
-    query += ` ORDER BY ${sort} ${direcao} LIMIT ? OFFSET ?`;
-    params.push(limite, offset);
+    consulta += ` ORDER BY ${ordenar} ${direcaoFormatada} LIMIT ? OFFSET ?`;
+    parametros.push(numeroLimite, deslocamento);
 
-    const [rows] = await conexao.query(query, params);
-    const [countResult] = await conexao.query(countQuery, countParams);
+    const [linhas] = await conexao.query(consulta, parametros);
+    const [resultadoContagem] = await conexao.query(consultaContagem, parametrosContagem);
 
-    const total = countResult[0].total;
-    const totalPaginas = Math.ceil(total / limite);
+    const total = resultadoContagem[0].total;
+    const totalPaginas = Math.ceil(total / numeroLimite);
 
     res.status(200).json({
-      pagina,
-      limite,
+      pagina: numeroPagina,
+      limite: numeroLimite,
       total,
       totalPaginas,
       filtros: {
@@ -90,61 +90,73 @@ async function listarTransactions(req, res, next) {
         descricao: descricao || null
       },
       ordenacao: {
-        campo: sort,
-        direcao
+        campo: ordenar,
+        direcao: direcaoFormatada
       },
-      dados: rows
+      dados: linhas
     });
   } catch (erro) {
     next(erro);
   }
 }
-async function buscarTransactionPorId(req, res, next) {
+async function buscarTransacaoPorId(req, res, next) {
   try {
     const { id } = req.params;
 
-    const [rows] = await conexao.query(
-      'SELECT * FROM transactions WHERE id = ?',
+    if (isNaN(id) || Number(id) <= 0) {
+      return res.status(400).json({
+        erro: 'ID deve ser um número válido e maior que zero'
+      });
+    }
+
+    const [linhas] = await conexao.query(
+      'SELECT * FROM transacoes WHERE id = ?',
       [id]
     );
 
-    if (rows.length === 0) {
+    if (linhas.length === 0) {
       return res.status(404).json({
         erro: 'Transação não encontrada'
       });
     }
 
-    res.status(200).json(rows[0]);
+    res.status(200).json(linhas[0]);
   } catch (erro) {
     next(erro);
   }
 }
 
-async function criarTransaction(req, res, next) {
+async function criarTransacao(req, res, next) {
   try {
     const { tipo, descricao, valor } = req.body;
 
-    const [result] = await conexao.query(
-      'INSERT INTO transactions (tipo, descricao, valor) VALUES (?, ?, ?)',
+    const [resultado] = await conexao.query(
+      'INSERT INTO transacoes (tipo, descricao, valor) VALUES (?, ?, ?)',
       [tipo, descricao, valor]
     );
 
     res.status(201).json({
       mensagem: 'Transação criada com sucesso',
-      id: result.insertId
+      id: resultado.insertId
     });
   } catch (erro) {
     next(erro);
   }
 }
 
-async function atualizarTransaction(req, res, next) {
+async function atualizarTransacao(req, res, next) {
   try {
     const { id } = req.params;
     const { tipo, descricao, valor } = req.body;
 
+    if (isNaN(id) || Number(id) <= 0) {
+      return res.status(400).json({
+        erro: 'ID deve ser um número válido e maior que zero'
+      });
+    }
+
     const [resultado] = await conexao.query(
-      'UPDATE transactions SET tipo = ?, descricao = ?, valor = ? WHERE id = ?',
+      'UPDATE transacoes SET tipo = ?, descricao = ?, valor = ? WHERE id = ?',
       [tipo, descricao, valor, id]
     );
 
@@ -162,12 +174,18 @@ async function atualizarTransaction(req, res, next) {
   }
 }
 
-async function deletarTransaction(req, res, next) {
+async function deletarTransacao(req, res, next) {
   try {
     const { id } = req.params;
 
+    if (isNaN(id) || Number(id) <= 0) {
+      return res.status(400).json({
+        erro: 'ID deve ser um número válido e maior que zero'
+      });
+    }
+
     const [resultado] = await conexao.query(
-      'DELETE FROM transactions WHERE id = ?',
+      'DELETE FROM transacoes WHERE id = ?',
       [id]
     );
 
@@ -184,7 +202,7 @@ async function deletarTransaction(req, res, next) {
     next(erro);
   }
 }
-async function resumoTransactions(req, res, next) {
+async function resumoTransacoes(req, res, next) {
   try {
     const { mes, ano } = req.query;
 
@@ -194,8 +212,8 @@ async function resumoTransactions(req, res, next) {
       });
     }
 
-    let whereClause = '';
-    const params = [];
+    let clausulaWhere = '';
+    const parametros = [];
     let mesNumero = null;
     let anoNumero = null;
 
@@ -221,16 +239,16 @@ if (
   });
 }
 
-      whereClause = 'WHERE MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
-      params.push(mesNumero, anoNumero);
+      clausulaWhere = 'WHERE MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
+      parametros.push(mesNumero, anoNumero);
     }
 
-    const [countRows] = await conexao.query(
-      `SELECT COUNT(*) AS totalRegistros FROM transactions ${whereClause}`,
-      params
+    const [linhasContagem] = await conexao.query(
+      `SELECT COUNT(*) AS totalRegistros FROM transacoes ${clausulaWhere}`,
+      parametros
     );
 
-    const totalRegistros = Number(countRows[0].totalRegistros);
+    const totalRegistros = Number(linhasContagem[0].totalRegistros);
 
     if (totalRegistros === 0) {
       return res.status(200).json({
@@ -246,19 +264,19 @@ if (
       });
     }
 
-    const [rows] = await conexao.query(
+    const [linhas] = await conexao.query(
       `
       SELECT
         COALESCE(SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END), 0) AS totalReceitas,
         COALESCE(SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END), 0) AS totalDespesas
-      FROM transactions
-      ${whereClause}
+      FROM transacoes
+      ${clausulaWhere}
       `,
-      params
+      parametros
     );
 
-    const totalReceitas = Number(rows[0].totalReceitas);
-    const totalDespesas = Number(rows[0].totalDespesas);
+    const totalReceitas = Number(linhas[0].totalReceitas);
+    const totalDespesas = Number(linhas[0].totalDespesas);
     const saldo = totalReceitas - totalDespesas;
 
     res.status(200).json({
@@ -275,7 +293,7 @@ if (
     next(erro);
   }
 }
-async function resumoMensalTransactions(req, res, next) {
+async function resumoMensalTransacoes(req, res, next) {
   try {
     const { ano } = req.query;
 
@@ -313,13 +331,13 @@ async function resumoMensalTransactions(req, res, next) {
       'Dezembro'
     ];
 
-    const [rows] = await conexao.query(
+    const [linhas] = await conexao.query(
       `
       SELECT
         MONTH(criado_em) AS mes,
         COALESCE(SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END), 0) AS totalReceitas,
         COALESCE(SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END), 0) AS totalDespesas
-      FROM transactions
+      FROM transacoes
       WHERE YEAR(criado_em) = ?
       GROUP BY MONTH(criado_em)
       ORDER BY MONTH(criado_em) ASC
@@ -329,10 +347,10 @@ async function resumoMensalTransactions(req, res, next) {
 
     const mapaMeses = {};
 
-    for (const row of rows) {
-      const mes = Number(row.mes);
-      const totalReceitas = Number(row.totalReceitas);
-      const totalDespesas = Number(row.totalDespesas);
+    for (const linha of linhas) {
+      const mes = Number(linha.mes);
+      const totalReceitas = Number(linha.totalReceitas);
+      const totalDespesas = Number(linha.totalDespesas);
 
       mapaMeses[mes] = {
         ano: anoNumero,
@@ -370,11 +388,11 @@ async function resumoMensalTransactions(req, res, next) {
 
 
 module.exports = {
-  listarTransactions,
-  buscarTransactionPorId,
-  criarTransaction,
-  atualizarTransaction,
-  deletarTransaction,
-  resumoTransactions,
-  resumoMensalTransactions
+  listarTransacoes,
+  buscarTransacaoPorId,
+  criarTransacao,
+  atualizarTransacao,
+  deletarTransacao,
+  resumoTransacoes,
+  resumoMensalTransacoes
 };
