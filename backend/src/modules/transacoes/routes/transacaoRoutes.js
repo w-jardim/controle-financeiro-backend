@@ -10,7 +10,7 @@ const {
   deletarTransacao,
   resumoTransacoes,
   resumoMensalTransacoes
-} = require('../controllers/transactionsController');
+} = require('../controllers/transacaoController');
 
 // Rotas de resumo (devem vir antes das rotas parametrizadas)
 roteador.get('/resumo/mensal', resumoMensalTransacoes);
