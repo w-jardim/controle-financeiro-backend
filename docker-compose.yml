@@ -18,8 +18,13 @@ services:
       retries: 10
 
   backend:
-    image: wjardim/controle-financeiro-backend:1.1.0
-    container_name: financeiro-backend
+    # Build local do backend (comentar se quiser usar imagem do Docker Hub)
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # Descomente a linha abaixo se quiser usar imagem pré-compilada:
+    # image: wjardim/controle-financeiro-backend:1.2.0
+    container_name: financeiro-backend-dev
     restart: always
     depends_on:
       mysql:
