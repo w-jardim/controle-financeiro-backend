@@ -4,6 +4,7 @@ const corsMiddleware = require('./shared/middlewares/corsConfig');
 const errorHandler = require('./shared/middlewares/errorHandler');
 const conexao = require('./shared/database/connection');
 const { registrarRotasTransacoes } = require('./modules/transacoes/module');
+const { registrarRotasAuth } = require('./modules/auth/module');
 
 /**
  * Cria e configura a aplicação Express
@@ -77,6 +78,7 @@ app.get('/', (req, res) => {
 // ============================================
 
 registrarRotasTransacoes(app);
+registrarRotasAuth(app);
 
 // ============================================
 // 404 - Rota Não Encontrada
