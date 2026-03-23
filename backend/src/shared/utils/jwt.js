@@ -6,6 +6,11 @@ function gerarToken(payload) {
   });
 }
 
+function verificarToken(token) {
+  return jwt.verify(token, process.env.JWT_SECRET);
+}
+
 module.exports = {
-  gerarToken
+  gerarToken,
+  verificarToken
 };

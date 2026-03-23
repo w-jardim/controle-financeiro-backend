@@ -5,6 +5,8 @@ const errorHandler = require('./shared/middlewares/errorHandler');
 const conexao = require('./shared/database/connection');
 const { registrarRotasTransacoes } = require('./modules/transacoes/module');
 const { registrarRotasAuth } = require('./modules/auth/module');
+const { registrarRotasCts } = require('./modules/cts/module');
+const authMiddleware = require('./shared/middlewares/authMiddleware');
 
 /**
  * Cria e configura a aplicação Express
@@ -77,8 +79,15 @@ app.get('/', (req, res) => {
 // Registro de Módulos
 // ============================================
 
+// Proteger apenas as rotas de transações com JWT
+app.use('/transacoes', authMiddleware);
+
+// Proteger as rotas de CTs com JWT
+app.use('/cts', authMiddleware);
+
 registrarRotasTransacoes(app);
 registrarRotasAuth(app);
+registrarRotasCts(app);
 
 // ============================================
 // 404 - Rota Não Encontrada

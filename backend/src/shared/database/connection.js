@@ -1,18 +1,14 @@
 const mysql = require('mysql2/promise');
 
-/**
- * Pool de conexões MySQL
- * Reutilizável por todos os módulos através de require
- */
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   charset: 'utf8mb4',
-  collation: 'utf8mb4_unicode_ci',
-  supportBigNumbers: true,
-  bigNumberStrings: true
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 module.exports = pool;

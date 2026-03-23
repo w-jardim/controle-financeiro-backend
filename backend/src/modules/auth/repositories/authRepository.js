@@ -6,6 +6,7 @@ class AuthRepository {
       'SELECT id, nome, email, senha_hash, ativo FROM users WHERE email = ? LIMIT 1',
       [email]
     );
+
     return rows[0] || null;
   }
 
@@ -14,6 +15,7 @@ class AuthRepository {
       'INSERT INTO accounts (nome, tipo, plano, status, criado_em) VALUES (?, ?, ?, ?, NOW())',
       [nome, tipo, plano, status]
     );
+
     return result.insertId;
   }
 
@@ -22,6 +24,7 @@ class AuthRepository {
       'INSERT INTO users (nome, email, senha_hash, criado_em) VALUES (?, ?, ?, NOW())',
       [nome, email, senhaHash]
     );
+
     return result.insertId;
   }
 
@@ -30,15 +33,40 @@ class AuthRepository {
       'INSERT INTO account_users (account_id, user_id, role, criado_em) VALUES (?, ?, ?, NOW())',
       [accountId, userId, role]
     );
+
     return result.insertId;
   }
 
   async criarCtInicial({ accountId, nome }) {
     const [result] = await conexao.execute(
-      'INSERT INTO cts (account_id, nome, status, criado_em) VALUES (?, ?, ?, NOW())',
-      [accountId, nome, 'ativo']
+      'INSERT INTO cts (account_id, nome, ativo, criado_em) VALUES (?, ?, TRUE, NOW())',
+      [accountId, nome]
     );
+
     return result.insertId;
+  }
+
+  async buscarContextoPrincipalDoUsuario(userId) {
+    const [rows] = await conexao.execute(
+      `
+        SELECT
+          au.account_id,
+          au.role,
+          a.nome AS account_nome,
+          a.tipo AS account_tipo,
+          a.plano AS account_plano,
+          a.status AS account_status
+        FROM account_users au
+        INNER JOIN accounts a ON a.id = au.account_id
+        WHERE au.user_id = ?
+          AND au.ativo = TRUE
+        ORDER BY au.id ASC
+        LIMIT 1
+      `,
+      [userId]
+    );
+
+    return rows[0] || null;
   }
 }
 

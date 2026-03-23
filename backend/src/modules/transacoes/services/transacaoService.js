@@ -6,6 +6,16 @@ class TransacaoService {
     return new AppError(mensagem, status);
   }
 
+  validarAccountId(accountId) {
+    const numeroAccountId = Number(accountId);
+
+    if (!Number.isInteger(numeroAccountId) || numeroAccountId <= 0) {
+      throw this.criarErro('Contexto de account_id ausente ou inválido', 403);
+    }
+
+    return numeroAccountId;
+  }
+
   validarId(id) {
     const numeroId = Number(id);
 
@@ -47,7 +57,7 @@ class TransacaoService {
     return mesNumero;
   }
 
-  async listar(query) {
+  async listar(query, accountId) {
     const {
       tipo,
       descricao,
@@ -56,6 +66,8 @@ class TransacaoService {
       ordenar = 'id',
       direcao = 'asc'
     } = query;
+
+    const accountIdValidado = this.validarAccountId(accountId);
 
     const numeroPagina = Number(pagina);
     const numeroLimite = Number(limite);
@@ -91,6 +103,7 @@ class TransacaoService {
     const offset = (numeroPagina - 1) * numeroLimite;
 
     const resultado = await repository.listar({
+      accountId: accountIdValidado,
       tipo,
       descricao,
       ordenar,
@@ -118,10 +131,14 @@ class TransacaoService {
     };
   }
 
-  async buscarPorId(id) {
+  async buscarPorId(id, accountId) {
     const numeroId = this.validarId(id);
+    const accountIdValidado = this.validarAccountId(accountId);
 
-    const transacao = await repository.buscarPorId(numeroId);
+    const transacao = await repository.buscarPorId(
+      numeroId,
+      accountIdValidado
+    );
 
     if (!transacao) {
       throw this.criarErro('Transação não encontrada', 404);
@@ -130,10 +147,15 @@ class TransacaoService {
     return transacao;
   }
 
-  async criar(dados) {
+  async criar(dados, accountId) {
+    const accountIdValidado = this.validarAccountId(accountId);
     const { tipo, descricao, valor } = dados;
 
-    const jaExiste = await repository.existePorTipoEDescricao(tipo, descricao);
+    const jaExiste = await repository.existePorTipoEDescricao(
+      tipo,
+      descricao,
+      accountIdValidado
+    );
 
     if (jaExiste) {
       throw this.criarErro(
@@ -143,6 +165,7 @@ class TransacaoService {
     }
 
     const resultado = await repository.criar({
+      accountId: accountIdValidado,
       tipo,
       descricao,
       valor
@@ -154,14 +177,16 @@ class TransacaoService {
     };
   }
 
-  async atualizar(id, dados) {
+  async atualizar(id, dados, accountId) {
     const numeroId = this.validarId(id);
+    const accountIdValidado = this.validarAccountId(accountId);
     const { tipo, descricao, valor } = dados;
 
     const jaExiste = await repository.existePorTipoEDescricaoIgnorandoId(
       tipo,
       descricao,
-      numeroId
+      numeroId,
+      accountIdValidado
     );
 
     if (jaExiste) {
@@ -171,11 +196,15 @@ class TransacaoService {
       );
     }
 
-    const resultado = await repository.atualizar(numeroId, {
-      tipo,
-      descricao,
-      valor
-    });
+    const resultado = await repository.atualizar(
+      numeroId,
+      accountIdValidado,
+      {
+        tipo,
+        descricao,
+        valor
+      }
+    );
 
     if (resultado.afetadas === 0) {
       throw this.criarErro('Transação não encontrada', 404);
@@ -186,10 +215,11 @@ class TransacaoService {
     };
   }
 
-  async deletar(id) {
+  async deletar(id, accountId) {
     const numeroId = this.validarId(id);
+    const accountIdValidado = this.validarAccountId(accountId);
 
-    const resultado = await repository.deletar(numeroId);
+    const resultado = await repository.deletar(numeroId, accountIdValidado);
 
     if (resultado.afetadas === 0) {
       throw this.criarErro('Transação não encontrada', 404);
@@ -200,8 +230,9 @@ class TransacaoService {
     };
   }
 
-  async resumo(query) {
+  async resumo(query, accountId) {
     const { mes, ano } = query;
+    const accountIdValidado = this.validarAccountId(accountId);
 
     if ((mes && !ano) || (!mes && ano)) {
       throw this.criarErro('Informe mes e ano juntos', 400);
@@ -216,6 +247,7 @@ class TransacaoService {
     }
 
     const totalRegistros = await repository.contarPorPeriodo({
+      accountId: accountIdValidado,
       mes: mesNumero,
       ano: anoNumero
     });
@@ -235,6 +267,7 @@ class TransacaoService {
     }
 
     const resumo = await repository.resumoPorPeriodo({
+      accountId: accountIdValidado,
       mes: mesNumero,
       ano: anoNumero
     });
@@ -253,8 +286,9 @@ class TransacaoService {
     };
   }
 
-  async resumoMensal(query) {
+  async resumoMensal(query, accountId) {
     const { ano } = query;
+    const accountIdValidado = this.validarAccountId(accountId);
 
     if (ano === undefined) {
       throw this.criarErro('Parâmetro ano é obrigatório', 400);
@@ -277,7 +311,10 @@ class TransacaoService {
       'Dezembro'
     ];
 
-    const linhas = await repository.resumoMensalPorAno(anoNumero);
+    const linhas = await repository.resumoMensalPorAno(
+      accountIdValidado,
+      anoNumero
+    );
 
     const mapaMeses = {};
 

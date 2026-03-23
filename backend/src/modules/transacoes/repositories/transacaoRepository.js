@@ -1,13 +1,16 @@
 const conexao = require('../../../shared/database/connection');
+const AppError = require('../../../shared/errors/AppError');
 
 class TransacaoRepository {
-  async listar({ tipo, descricao, ordenar, direcao, limite, offset }) {
+  async listar({ tipo, descricao, ordenar, direcao, limite, offset, accountId }) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     let consulta = 'SELECT * FROM transacoes';
     let consultaContagem = 'SELECT COUNT(*) AS total FROM transacoes';
 
-    const filtros = [];
-    const params = [];
-    const paramsCount = [];
+    const filtros = ['account_id = ?'];
+    const params = [accountId];
+    const paramsCount = [accountId];
 
     if (tipo) {
       filtros.push('tipo = ?');
@@ -21,11 +24,9 @@ class TransacaoRepository {
       paramsCount.push(`%${descricao}%`);
     }
 
-    if (filtros.length > 0) {
-      const where = ` WHERE ${filtros.join(' AND ')}`;
-      consulta += where;
-      consultaContagem += where;
-    }
+    const where = ` WHERE ${filtros.join(' AND ')}`;
+    consulta += where;
+    consultaContagem += where;
 
     consulta += ` ORDER BY ${ordenar} ${direcao} LIMIT ? OFFSET ?`;
     params.push(limite, offset);
@@ -39,37 +40,45 @@ class TransacaoRepository {
     };
   }
 
-  async buscarPorId(id) {
+  async buscarPorId(id, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     const [linhas] = await conexao.query(
-      'SELECT * FROM transacoes WHERE id = ?',
-      [id]
+      'SELECT * FROM transacoes WHERE id = ? AND account_id = ?',
+      [id, accountId]
     );
 
     return linhas[0] || null;
   }
 
-  async existePorTipoEDescricao(tipo, descricao) {
+  async existePorTipoEDescricao(tipo, descricao, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     const [linhas] = await conexao.query(
-      'SELECT id FROM transacoes WHERE tipo = ? AND descricao = ? LIMIT 1',
-      [tipo, descricao]
+      'SELECT id FROM transacoes WHERE account_id = ? AND tipo = ? AND descricao = ? LIMIT 1',
+      [accountId, tipo, descricao]
     );
 
     return linhas.length > 0;
   }
 
-  async existePorTipoEDescricaoIgnorandoId(tipo, descricao, id) {
+  async existePorTipoEDescricaoIgnorandoId(tipo, descricao, id, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     const [linhas] = await conexao.query(
-      'SELECT id FROM transacoes WHERE tipo = ? AND descricao = ? AND id <> ? LIMIT 1',
-      [tipo, descricao, id]
+      'SELECT id FROM transacoes WHERE account_id = ? AND tipo = ? AND descricao = ? AND id <> ? LIMIT 1',
+      [accountId, tipo, descricao, id]
     );
 
     return linhas.length > 0;
   }
 
-  async criar({ tipo, descricao, valor }) {
+  async criar({ tipo, descricao, valor, accountId, ctId = null }) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     const [resultado] = await conexao.query(
-      'INSERT INTO transacoes (tipo, descricao, valor) VALUES (?, ?, ?)',
-      [tipo, descricao, valor]
+      'INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES (?, ?, ?, ?, ?)',
+      [accountId, ctId, tipo, descricao, valor]
     );
 
     return {
@@ -77,10 +86,12 @@ class TransacaoRepository {
     };
   }
 
-  async atualizar(id, { tipo, descricao, valor }) {
+  async atualizar(id, accountId, { tipo, descricao, valor }) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     const [resultado] = await conexao.query(
-      'UPDATE transacoes SET tipo = ?, descricao = ?, valor = ? WHERE id = ?',
-      [tipo, descricao, valor, id]
+      'UPDATE transacoes SET tipo = ?, descricao = ?, valor = ? WHERE id = ? AND account_id = ?',
+      [tipo, descricao, valor, id, accountId]
     );
 
     return {
@@ -88,10 +99,12 @@ class TransacaoRepository {
     };
   }
 
-  async deletar(id) {
+  async deletar(id, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     const [resultado] = await conexao.query(
-      'DELETE FROM transacoes WHERE id = ?',
-      [id]
+      'DELETE FROM transacoes WHERE id = ? AND account_id = ?',
+      [id, accountId]
     );
 
     return {
@@ -99,12 +112,14 @@ class TransacaoRepository {
     };
   }
 
-  async contarPorPeriodo({ mes, ano }) {
-    let clausulaWhere = '';
-    const parametros = [];
+  async contarPorPeriodo({ mes, ano, accountId }) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    let clausulaWhere = 'WHERE account_id = ?';
+    const parametros = [accountId];
 
     if (mes && ano) {
-      clausulaWhere = 'WHERE MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
+      clausulaWhere += ' AND MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
       parametros.push(mes, ano);
     }
 
@@ -116,12 +131,14 @@ class TransacaoRepository {
     return Number(linhas[0].totalRegistros);
   }
 
-  async resumoPorPeriodo({ mes, ano }) {
-    let clausulaWhere = '';
-    const parametros = [];
+  async resumoPorPeriodo({ mes, ano, accountId }) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    let clausulaWhere = 'WHERE account_id = ?';
+    const parametros = [accountId];
 
     if (mes && ano) {
-      clausulaWhere = 'WHERE MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
+      clausulaWhere += ' AND MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
       parametros.push(mes, ano);
     }
 
@@ -142,7 +159,9 @@ class TransacaoRepository {
     };
   }
 
-  async resumoMensalPorAno(ano) {
+  async resumoMensalPorAno(accountId, ano) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
     const [linhas] = await conexao.query(
       `
       SELECT
@@ -150,11 +169,11 @@ class TransacaoRepository {
         COALESCE(SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END), 0) AS totalReceitas,
         COALESCE(SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END), 0) AS totalDespesas
       FROM transacoes
-      WHERE YEAR(criado_em) = ?
+      WHERE account_id = ? AND YEAR(criado_em) = ?
       GROUP BY MONTH(criado_em)
       ORDER BY MONTH(criado_em) ASC
       `,
-      [ano]
+      [accountId, ano]
     );
 
     return linhas.map((linha) => ({
