@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const authRepository = require('../repositories/authRepository');
 const AppError = require('../../../shared/errors/AppError');
+const { gerarToken } = require('../../../shared/utils/jwt');
 
 class AuthService {
   async cadastrarContaComOwner({
@@ -91,6 +92,50 @@ class AuthService {
       accountId,
       userId,
       ctId
+    };
+  }
+
+  async login({ email, senha }) {
+    // Validações obrigatórias
+    if (!email || email.trim() === '') {
+      throw new AppError('Email é obrigatório', 400);
+    }
+
+    if (!senha || senha.trim() === '') {
+      throw new AppError('Senha é obrigatória', 400);
+    }
+
+    // Buscar usuário pelo email
+    const usuario = await authRepository.buscarUsuarioPorEmail(email);
+    if (!usuario) {
+      throw new AppError('Email ou senha incorretos', 401);
+    }
+
+    // Validar acesso do usuário
+    if (usuario.ativo === false || usuario.ativo === 0) {
+      throw new AppError('Usuário inativo', 403);
+    }
+
+    // Comparar senha fornecida com hash armazenado
+    const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
+    if (!senhaValida) {
+      throw new AppError('Email ou senha incorretos', 401);
+    }
+
+    // Gerar token JWT
+    const token = gerarToken({
+      userId: usuario.id,
+      email: usuario.email
+    });
+
+    return {
+      mensagem: 'Login realizado com sucesso',
+      token,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email
+      }
     };
   }
 }

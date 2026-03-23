@@ -3,7 +3,7 @@ const conexao = require('../../../shared/database/connection');
 class AuthRepository {
   async buscarUsuarioPorEmail(email) {
     const [rows] = await conexao.execute(
-      'SELECT id, email FROM users WHERE email = ?',
+      'SELECT id, nome, email, senha_hash, ativo FROM users WHERE email = ? LIMIT 1',
       [email]
     );
     return rows[0] || null;

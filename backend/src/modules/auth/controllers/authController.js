@@ -6,4 +6,12 @@ const cadastrar = asyncHandler(async (req, res) => {
   return res.status(201).json(resultado);
 });
 
-module.exports = { cadastrar };
+const login = asyncHandler(async (req, res) => {
+  const resultado = await authService.login(req.body);
+  return res.status(200).json(resultado);
+});
+
+module.exports = {
+  cadastrar,
+  login
+};
