@@ -38,7 +38,8 @@ services:
       PORT: "${PORT}"
       NODE_ENV: development
     volumes:
-      - ./backend:/app
+      # Em desenvolvimento evite sobrescrever o node_modules da imagem.
+      # Removido bind-mount do diretório completo para preservar dependências instaladas na imagem.
       - /app/node_modules
     command: npm run dev
 
