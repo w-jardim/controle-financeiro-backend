@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const authRepository = require('../repositories/authRepository');
 const AppError = require('../../../shared/errors/AppError');
 const { gerarToken } = require('../../../shared/utils/jwt');
@@ -53,8 +53,8 @@ class AuthService {
       throw new AppError('Email já cadastrado', 409);
     }
 
-    // Gerar hash da senha
-    const senhaHash = await bcrypt.hash(senha, 10);
+    // Gerar hash da senha (bcryptjs - síncrono para simplicidade)
+    const senhaHash = bcrypt.hashSync(senha, 10);
 
     // Criar account
     const accountId = await authRepository.criarAccount({
@@ -116,8 +116,8 @@ class AuthService {
       throw new AppError('Usuário inativo', 403);
     }
 
-    // Comparar senha fornecida com hash armazenado
-    const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
+    // Comparar senha fornecida com hash armazenado (bcryptjs síncrono)
+    const senhaValida = bcrypt.compareSync(senha, usuario.senha_hash);
     if (!senhaValida) {
       throw new AppError('Email ou senha incorretos', 401);
     }
