@@ -1,0 +1,542 @@
+{
+  "info": {
+    "name": "API Gestão de CT - Backend",
+    "_postman_id": "9a0e9a6d-2e7d-4b49-b0fd-gestaoct001",
+    "description": "Collection base para autenticação, CTs e transações.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "ctId",
+      "value": "1"
+    },
+    {
+      "key": "transacaoId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Cadastro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/cadastro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "cadastro"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomeResponsavel\": \"Wallace\",\n  \"email\": \"wallace@email.com\",\n  \"senha\": \"123456\",\n  \"nomeAccount\": \"CT Wallace\",\n  \"tipoAccount\": \"ct_owner\",\n  \"nomeCtInicial\": \"CT Centro\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let json = {};",
+                  "try {",
+                  "  json = pm.response.json();",
+                  "} catch (e) {}",
+                  "",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@admin.com\",\n  \"senha\": \"teste12345678\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CTs",
+      "item": [
+        {
+          "name": "Listar CTs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar CT por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cts/{{ctId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cts",
+                "{{ctId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar CT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"CT Zona Norte\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar CT",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cts/{{ctId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cts",
+                "{{ctId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"CT Atualizado\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Desativar CT",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cts/{{ctId}}/desativar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cts",
+                "{{ctId}}",
+                "desativar"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ativar CT",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cts/{{ctId}}/ativar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cts",
+                "{{ctId}}",
+                "ativar"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transações",
+      "item": [
+        {
+          "name": "Listar Transações",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar Transações por CT",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes?ct_id={{ctId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes"
+              ],
+              "query": [
+                {
+                  "key": "ct_id",
+                  "value": "{{ctId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Transação por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes/{{transacaoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes",
+                "{{transacaoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Transação",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"receita\",\n  \"descricao\": \"Mensalidade\",\n  \"valor\": 150,\n  \"ct_id\": 1\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Transação",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes/{{transacaoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes",
+                "{{transacaoId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"receita\",\n  \"descricao\": \"Mensalidade atualizada\",\n  \"valor\": 180,\n  \"ct_id\": 1\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deletar Transação",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes/{{transacaoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes",
+                "{{transacaoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resumo Geral",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes/resumo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes",
+                "resumo"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resumo por CT",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes/resumo?ct_id={{ctId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes",
+                "resumo"
+              ],
+              "query": [
+                {
+                  "key": "ct_id",
+                  "value": "{{ctId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resumo Mensal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes/resumo/mensal?ano=2026",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes",
+                "resumo",
+                "mensal"
+              ],
+              "query": [
+                {
+                  "key": "ano",
+                  "value": "2026"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resumo Mensal por CT",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transacoes/resumo/mensal?ano=2026&ct_id={{ctId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transacoes",
+                "resumo",
+                "mensal"
+              ],
+              "query": [
+                {
+                  "key": "ano",
+                  "value": "2026"
+                },
+                {
+                  "key": "ct_id",
+                  "value": "{{ctId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS users (
   nome VARCHAR(150) NOT NULL,
   email VARCHAR(150) NOT NULL UNIQUE,
   senha_hash VARCHAR(255) NOT NULL,
-  ativo BOOLEAN NOT NULL DEFAULT TRUE,
-  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ativo TINYINT(1) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
--- TABELA: ACCOUNT_USERS (MULTITENANT)
+-- TABELA: ACCOUNT_USERS
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS account_users (
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS account_users (
   account_id INT NOT NULL,
   user_id INT NOT NULL,
   role ENUM('owner','admin','user') NOT NULL DEFAULT 'user',
-  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  ativo TINYINT(1) DEFAULT 1,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   UNIQUE KEY uq_account_user (account_id, user_id),
@@ -64,13 +64,12 @@ CREATE TABLE IF NOT EXISTS cts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   account_id INT NOT NULL,
   nome VARCHAR(150) NOT NULL,
-  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  ativo TINYINT(1) DEFAULT 1,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   UNIQUE KEY uq_ct_nome_por_account (account_id, nome),
   INDEX idx_ct_account_id (account_id),
-  INDEX idx_ct_ativo (ativo),
 
   CONSTRAINT fk_ct_account
     FOREIGN KEY (account_id) REFERENCES accounts(id)
@@ -94,7 +93,6 @@ CREATE TABLE IF NOT EXISTS transacoes (
   INDEX idx_transacoes_account_id (account_id),
   INDEX idx_transacoes_ct_id (ct_id),
   INDEX idx_transacoes_data (criado_em),
-  INDEX idx_transacoes_account_data (account_id, criado_em),
 
   CONSTRAINT fk_transacoes_account
     FOREIGN KEY (account_id) REFERENCES accounts(id)
@@ -114,23 +112,23 @@ INSERT INTO accounts (nome, tipo, plano, status)
 VALUES ('Conta Principal', 'ct_owner', 'basic', 'ativo');
 
 -- Usuário admin
--- senha original ilustrativa: 123456
+-- senha ilustrativa com hash bcrypt de exemplo
 INSERT INTO users (nome, email, senha_hash, ativo)
 VALUES (
   'Admin',
   'admin@admin.com',
   '$2b$10$7aX8mQ0w7J5Y9zR9Vx1k2e6mN4pQf2W8sL0gB3nD1cH5uT7rK9y1a',
-  TRUE
+  1
 );
 
 -- Vincular usuário à conta
 INSERT INTO account_users (account_id, user_id, role, ativo)
-VALUES (1, 1, 'owner', TRUE);
+VALUES (1, 1, 'owner', 1);
 
 -- CTs de exemplo
 INSERT INTO cts (account_id, nome, ativo) VALUES
-(1, 'CT Centro', TRUE),
-(1, 'CT Zona Sul', TRUE);
+(1, 'CT Centro', 1),
+(1, 'CT Zona Sul', 1);
 
 -- Transações de exemplo
 INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES

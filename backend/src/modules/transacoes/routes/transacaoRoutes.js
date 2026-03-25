@@ -2,6 +2,7 @@ const express = require('express');
 const roteador = express.Router();
 
 const validarTransacao = require('../middlewares/validarTransacao');
+const validarIdNumerico = require('../../../shared/middlewares/validarIdNumerico');
 const {
   listarTransacoes,
   buscarTransacaoPorId,
@@ -12,15 +13,23 @@ const {
   resumoMensalTransacoes
 } = require('../controllers/transacaoController');
 
-// Rotas de resumo (devem vir antes das rotas parametrizadas)
+// ============================================
+// ROTAS DE RESUMO (ESPECÍFICAS)
+// ============================================
+
 roteador.get('/resumo/mensal', resumoMensalTransacoes);
 roteador.get('/resumo', resumoTransacoes);
 
-// Rotas de CRUD
+// ============================================
+// CRUD
+// ============================================
+
 roteador.get('/', listarTransacoes);
-roteador.get('/:id', buscarTransacaoPorId);
 roteador.post('/', validarTransacao, criarTransacao);
-roteador.put('/:id', validarTransacao, atualizarTransacao);
-roteador.delete('/:id', deletarTransacao);
+
+// ⚠️ ID NUMÉRICO (proteção contra colisão de rota)
+roteador.get('/:id', validarIdNumerico, buscarTransacaoPorId);
+roteador.put('/:id', validarIdNumerico, validarTransacao, atualizarTransacao);
+roteador.delete('/:id', validarIdNumerico, deletarTransacao);
 
 module.exports = roteador;

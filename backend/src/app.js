@@ -7,7 +7,7 @@ const { registrarRotasTransacoes } = require('./modules/transacoes/module');
 const { registrarRotasAuth } = require('./modules/auth/module');
 const { registrarRotasCts } = require('./modules/cts/module');
 const authMiddleware = require('./shared/middlewares/authMiddleware');
-
+const { registrarRotasAlunos } = require('./modules/alunos/module');
 /**
  * Cria e configura a aplicação Express
  * Não faz listen neste arquivo
@@ -82,12 +82,14 @@ app.get('/', (req, res) => {
 // Proteger apenas as rotas de transações com JWT
 app.use('/transacoes', authMiddleware);
 
+
 // Proteger as rotas de CTs com JWT
 app.use('/cts', authMiddleware);
 
 registrarRotasTransacoes(app);
 registrarRotasAuth(app);
 registrarRotasCts(app);
+registrarRotasAlunos(app);
 
 // ============================================
 // 404 - Rota Não Encontrada

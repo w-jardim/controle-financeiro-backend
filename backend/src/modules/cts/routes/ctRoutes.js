@@ -10,11 +10,13 @@ const {
   ativarCt
 } = require('../controllers/ctController');
 
+const validarIdNumerico = require('../../../shared/middlewares/validarIdNumerico');
+
 roteador.get('/', listarCts);
 roteador.post('/', criarCt);
-roteador.patch('/:id/desativar', desativarCt);
-roteador.patch('/:id/ativar', ativarCt);
-roteador.get('/:id', buscarCtPorId);
-roteador.put('/:id', atualizarCt);
+roteador.patch('/:id/desativar', validarIdNumerico, desativarCt);
+roteador.patch('/:id/ativar', validarIdNumerico, ativarCt);
+roteador.get('/:id', validarIdNumerico, buscarCtPorId);
+roteador.put('/:id', validarIdNumerico, atualizarCt);
 
 module.exports = roteador;

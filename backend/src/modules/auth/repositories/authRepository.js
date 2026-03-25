@@ -1,8 +1,14 @@
 const conexao = require('../../../shared/database/connection');
 
 class AuthRepository {
-  async buscarUsuarioPorEmail(email) {
-    const [rows] = await conexao.execute(
+  obterExecutor(connection) {
+    return connection || conexao;
+  }
+
+  async buscarUsuarioPorEmail(email, connection = null) {
+    const executor = this.obterExecutor(connection);
+
+    const [rows] = await executor.execute(
       'SELECT id, nome, email, senha_hash, ativo FROM users WHERE email = ? LIMIT 1',
       [email]
     );
@@ -10,8 +16,10 @@ class AuthRepository {
     return rows[0] || null;
   }
 
-  async criarAccount({ nome, tipo, plano, status }) {
-    const [result] = await conexao.execute(
+  async criarAccount({ nome, tipo, plano, status }, connection = null) {
+    const executor = this.obterExecutor(connection);
+
+    const [result] = await executor.execute(
       'INSERT INTO accounts (nome, tipo, plano, status, criado_em) VALUES (?, ?, ?, ?, NOW())',
       [nome, tipo, plano, status]
     );
@@ -19,26 +27,32 @@ class AuthRepository {
     return result.insertId;
   }
 
-  async criarUsuario({ nome, email, senhaHash }) {
-    const [result] = await conexao.execute(
-      'INSERT INTO users (nome, email, senha_hash, criado_em) VALUES (?, ?, ?, NOW())',
+  async criarUsuario({ nome, email, senhaHash }, connection = null) {
+    const executor = this.obterExecutor(connection);
+
+    const [result] = await executor.execute(
+      'INSERT INTO users (nome, email, senha_hash, ativo, criado_em) VALUES (?, ?, ?, TRUE, NOW())',
       [nome, email, senhaHash]
     );
 
     return result.insertId;
   }
 
-  async vincularUsuarioNaConta({ accountId, userId, role }) {
-    const [result] = await conexao.execute(
-      'INSERT INTO account_users (account_id, user_id, role, criado_em) VALUES (?, ?, ?, NOW())',
+  async vincularUsuarioNaConta({ accountId, userId, role }, connection = null) {
+    const executor = this.obterExecutor(connection);
+
+    const [result] = await executor.execute(
+      'INSERT INTO account_users (account_id, user_id, role, ativo, criado_em) VALUES (?, ?, ?, TRUE, NOW())',
       [accountId, userId, role]
     );
 
     return result.insertId;
   }
 
-  async criarCtInicial({ accountId, nome }) {
-    const [result] = await conexao.execute(
+  async criarCtInicial({ accountId, nome }, connection = null) {
+    const executor = this.obterExecutor(connection);
+
+    const [result] = await executor.execute(
       'INSERT INTO cts (account_id, nome, ativo, criado_em) VALUES (?, ?, TRUE, NOW())',
       [accountId, nome]
     );
@@ -46,8 +60,10 @@ class AuthRepository {
     return result.insertId;
   }
 
-  async buscarContextoPrincipalDoUsuario(userId) {
-    const [rows] = await conexao.execute(
+  async buscarContextoPrincipalDoUsuario(userId, connection = null) {
+    const executor = this.obterExecutor(connection);
+
+    const [rows] = await executor.execute(
       `
         SELECT
           au.account_id,
