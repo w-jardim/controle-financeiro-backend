@@ -26,6 +26,20 @@ class TransacaoService {
     return numeroId;
   }
 
+  validarCtId(ctId) {
+    if (ctId === undefined || ctId === null || ctId === '') {
+      return null;
+    }
+
+    const numeroCtId = Number(ctId);
+
+    if (!Number.isInteger(numeroCtId) || numeroCtId <= 0) {
+      throw this.criarErro('ct_id deve ser um número válido', 400);
+    }
+
+    return numeroCtId;
+  }
+
   validarAno(ano) {
     const anoNumero = Number(ano);
     const anoAtual = new Date().getFullYear();
@@ -57,10 +71,37 @@ class TransacaoService {
     return mesNumero;
   }
 
+  validarTipo(tipo) {
+    if (!['receita', 'despesa'].includes(tipo)) {
+      throw this.criarErro('Campo tipo deve ser receita ou despesa', 400);
+    }
+
+    return tipo;
+  }
+
+  validarDescricao(descricao) {
+    if (!descricao || typeof descricao !== 'string' || !descricao.trim()) {
+      throw this.criarErro('Campo descricao é obrigatório', 400);
+    }
+
+    return descricao.trim();
+  }
+
+  validarValor(valor) {
+    const numeroValor = Number(valor);
+
+    if (isNaN(numeroValor) || numeroValor <= 0) {
+      throw this.criarErro('Campo valor deve ser um número maior que zero', 400);
+    }
+
+    return numeroValor;
+  }
+
   async listar(query, accountId) {
     const {
       tipo,
       descricao,
+      ct_id,
       pagina = 1,
       limite = 10,
       ordenar = 'id',
@@ -71,6 +112,7 @@ class TransacaoService {
 
     const numeroPagina = Number(pagina);
     const numeroLimite = Number(limite);
+    const ctIdValidado = this.validarCtId(ct_id);
 
     if (isNaN(numeroPagina) || numeroPagina <= 0) {
       throw this.criarErro(
@@ -86,12 +128,21 @@ class TransacaoService {
       );
     }
 
-    const camposPermitidos = ['id', 'tipo', 'descricao', 'valor', 'criado_em'];
+    const camposPermitidos = [
+      'id',
+      'tipo',
+      'descricao',
+      'valor',
+      'criado_em',
+      'atualizado_em'
+    ];
+
     if (!camposPermitidos.includes(ordenar)) {
       throw this.criarErro('Parâmetro ordenar inválido', 400);
     }
 
     const direcaoFormatada = String(direcao).toLowerCase();
+
     if (!['asc', 'desc'].includes(direcaoFormatada)) {
       throw this.criarErro('Parâmetro direcao deve ser asc ou desc', 400);
     }
@@ -106,6 +157,7 @@ class TransacaoService {
       accountId: accountIdValidado,
       tipo,
       descricao,
+      ct_id: ctIdValidado,
       ordenar,
       direcao: direcaoFormatada,
       limite: numeroLimite,
@@ -121,7 +173,8 @@ class TransacaoService {
       totalPaginas,
       filtros: {
         tipo: tipo || null,
-        descricao: descricao || null
+        descricao: descricao || null,
+        ct_id: ctIdValidado
       },
       ordenacao: {
         campo: ordenar,
@@ -149,7 +202,11 @@ class TransacaoService {
 
   async criar(dados, accountId) {
     const accountIdValidado = this.validarAccountId(accountId);
-    const { tipo, descricao, valor } = dados;
+
+    const tipo = this.validarTipo(dados.tipo);
+    const descricao = this.validarDescricao(dados.descricao);
+    const valor = this.validarValor(dados.valor);
+    const ctIdValidado = this.validarCtId(dados.ct_id);
 
     const jaExiste = await repository.existePorTipoEDescricao(
       tipo,
@@ -166,6 +223,7 @@ class TransacaoService {
 
     const resultado = await repository.criar({
       accountId: accountIdValidado,
+      ct_id: ctIdValidado,
       tipo,
       descricao,
       valor
@@ -180,7 +238,11 @@ class TransacaoService {
   async atualizar(id, dados, accountId) {
     const numeroId = this.validarId(id);
     const accountIdValidado = this.validarAccountId(accountId);
-    const { tipo, descricao, valor } = dados;
+
+    const tipo = this.validarTipo(dados.tipo);
+    const descricao = this.validarDescricao(dados.descricao);
+    const valor = this.validarValor(dados.valor);
+    const ctIdValidado = this.validarCtId(dados.ct_id);
 
     const jaExiste = await repository.existePorTipoEDescricaoIgnorandoId(
       tipo,
@@ -202,7 +264,8 @@ class TransacaoService {
       {
         tipo,
         descricao,
-        valor
+        valor,
+        ct_id: ctIdValidado
       }
     );
 
@@ -231,8 +294,9 @@ class TransacaoService {
   }
 
   async resumo(query, accountId) {
-    const { mes, ano } = query;
+    const { mes, ano, ct_id } = query;
     const accountIdValidado = this.validarAccountId(accountId);
+    const ctIdValidado = this.validarCtId(ct_id);
 
     if ((mes && !ano) || (!mes && ano)) {
       throw this.criarErro('Informe mes e ano juntos', 400);
@@ -248,6 +312,7 @@ class TransacaoService {
 
     const totalRegistros = await repository.contarPorPeriodo({
       accountId: accountIdValidado,
+      ct_id: ctIdValidado,
       mes: mesNumero,
       ano: anoNumero
     });
@@ -255,6 +320,7 @@ class TransacaoService {
     if (totalRegistros === 0) {
       return {
         filtro: {
+          ct_id: ctIdValidado,
           mes: mesNumero,
           ano: anoNumero
         },
@@ -268,6 +334,7 @@ class TransacaoService {
 
     const resumo = await repository.resumoPorPeriodo({
       accountId: accountIdValidado,
+      ct_id: ctIdValidado,
       mes: mesNumero,
       ano: anoNumero
     });
@@ -276,6 +343,7 @@ class TransacaoService {
 
     return {
       filtro: {
+        ct_id: ctIdValidado,
         mes: mesNumero,
         ano: anoNumero
       },
@@ -287,8 +355,9 @@ class TransacaoService {
   }
 
   async resumoMensal(query, accountId) {
-    const { ano } = query;
+    const { ano, ct_id } = query;
     const accountIdValidado = this.validarAccountId(accountId);
+    const ctIdValidado = this.validarCtId(ct_id);
 
     if (ano === undefined) {
       throw this.criarErro('Parâmetro ano é obrigatório', 400);
@@ -311,10 +380,11 @@ class TransacaoService {
       'Dezembro'
     ];
 
-    const linhas = await repository.resumoMensalPorAno(
-      accountIdValidado,
-      anoNumero
-    );
+    const linhas = await repository.resumoMensalPorAno({
+      accountId: accountIdValidado,
+      ct_id: ctIdValidado,
+      ano: anoNumero
+    });
 
     const mapaMeses = {};
 

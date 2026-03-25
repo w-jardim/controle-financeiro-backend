@@ -2,7 +2,16 @@ const conexao = require('../../../shared/database/connection');
 const AppError = require('../../../shared/errors/AppError');
 
 class TransacaoRepository {
-  async listar({ tipo, descricao, ordenar, direcao, limite, offset, accountId }) {
+  async listar({
+    tipo,
+    descricao,
+    ct_id,
+    ordenar,
+    direcao,
+    limite,
+    offset,
+    accountId
+  }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
     let consulta = 'SELECT * FROM transacoes';
@@ -22,6 +31,12 @@ class TransacaoRepository {
       filtros.push('descricao LIKE ?');
       params.push(`%${descricao}%`);
       paramsCount.push(`%${descricao}%`);
+    }
+
+    if (ct_id !== null && ct_id !== undefined) {
+      filtros.push('ct_id = ?');
+      params.push(ct_id);
+      paramsCount.push(ct_id);
     }
 
     const where = ` WHERE ${filtros.join(' AND ')}`;
@@ -73,12 +88,12 @@ class TransacaoRepository {
     return linhas.length > 0;
   }
 
-  async criar({ tipo, descricao, valor, accountId, ctId = null }) {
+  async criar({ tipo, descricao, valor, accountId, ct_id = null }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
     const [resultado] = await conexao.query(
       'INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES (?, ?, ?, ?, ?)',
-      [accountId, ctId, tipo, descricao, valor]
+      [accountId, ct_id, tipo, descricao, valor]
     );
 
     return {
@@ -86,12 +101,12 @@ class TransacaoRepository {
     };
   }
 
-  async atualizar(id, accountId, { tipo, descricao, valor }) {
+  async atualizar(id, accountId, { tipo, descricao, valor, ct_id = null }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
     const [resultado] = await conexao.query(
-      'UPDATE transacoes SET tipo = ?, descricao = ?, valor = ? WHERE id = ? AND account_id = ?',
-      [tipo, descricao, valor, id, accountId]
+      'UPDATE transacoes SET tipo = ?, descricao = ?, valor = ?, ct_id = ? WHERE id = ? AND account_id = ?',
+      [tipo, descricao, valor, ct_id, id, accountId]
     );
 
     return {
@@ -112,11 +127,16 @@ class TransacaoRepository {
     };
   }
 
-  async contarPorPeriodo({ mes, ano, accountId }) {
+  async contarPorPeriodo({ mes, ano, accountId, ct_id }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
     let clausulaWhere = 'WHERE account_id = ?';
     const parametros = [accountId];
+
+    if (ct_id !== null && ct_id !== undefined) {
+      clausulaWhere += ' AND ct_id = ?';
+      parametros.push(ct_id);
+    }
 
     if (mes && ano) {
       clausulaWhere += ' AND MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
@@ -131,11 +151,16 @@ class TransacaoRepository {
     return Number(linhas[0].totalRegistros);
   }
 
-  async resumoPorPeriodo({ mes, ano, accountId }) {
+  async resumoPorPeriodo({ mes, ano, accountId, ct_id }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
     let clausulaWhere = 'WHERE account_id = ?';
     const parametros = [accountId];
+
+    if (ct_id !== null && ct_id !== undefined) {
+      clausulaWhere += ' AND ct_id = ?';
+      parametros.push(ct_id);
+    }
 
     if (mes && ano) {
       clausulaWhere += ' AND MONTH(criado_em) = ? AND YEAR(criado_em) = ?';
@@ -159,8 +184,16 @@ class TransacaoRepository {
     };
   }
 
-  async resumoMensalPorAno(accountId, ano) {
+  async resumoMensalPorAno({ accountId, ano, ct_id }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    let where = 'WHERE account_id = ? AND YEAR(criado_em) = ?';
+    const params = [accountId, ano];
+
+    if (ct_id !== null && ct_id !== undefined) {
+      where += ' AND ct_id = ?';
+      params.push(ct_id);
+    }
 
     const [linhas] = await conexao.query(
       `
@@ -169,11 +202,11 @@ class TransacaoRepository {
         COALESCE(SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END), 0) AS totalReceitas,
         COALESCE(SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END), 0) AS totalDespesas
       FROM transacoes
-      WHERE account_id = ? AND YEAR(criado_em) = ?
+      ${where}
       GROUP BY MONTH(criado_em)
       ORDER BY MONTH(criado_em) ASC
       `,
-      [accountId, ano]
+      params
     );
 
     return linhas.map((linha) => ({

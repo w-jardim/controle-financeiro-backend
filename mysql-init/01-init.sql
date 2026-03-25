@@ -1,28 +1,139 @@
--- Configurar charset UTF-8 para session
+-- ============================================
+-- CONFIGURAÇÃO INICIAL
+-- ============================================
+
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
--- Criar tabela de transações com suporte completo a UTF-8
-CREATE TABLE IF NOT EXISTS transacoes (
+-- ============================================
+-- TABELA: ACCOUNTS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS accounts (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  tipo ENUM('receita', 'despesa') NOT NULL,
-  descricao VARCHAR(255) NOT NULL,
-  valor DECIMAL(12, 2) NOT NULL,
-  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_tipo (tipo),
-  INDEX idx_criado_em (criado_em)
+  nome VARCHAR(150) NOT NULL,
+  tipo VARCHAR(50) NOT NULL DEFAULT 'ct_owner',
+  plano VARCHAR(50) NOT NULL DEFAULT 'basic',
+  status VARCHAR(50) NOT NULL DEFAULT 'ativo',
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Inserir dados de exemplo
-INSERT INTO transacoes (tipo, descricao, valor) VALUES
-('receita', 'Salário mensal', 3500.00),
-('receita', 'Freelance - Projeto X', 1200.50),
-('despesa', 'Aluguel', 1500.00),
-('despesa', 'Alimentação', 450.75),
-('despesa', 'Transporte', 200.00),
-('receita', 'Bônus', 800.00),
-('despesa', 'Energia elétrica', 180.50),
-('despesa', 'Internet', 89.90),
-('receita', 'Venda de item', 350.00),
-('despesa', 'Medicamentos', 120.00);
+-- ============================================
+-- TABELA: USERS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(150) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  senha_hash VARCHAR(255) NOT NULL,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: ACCOUNT_USERS (MULTITENANT)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS account_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  user_id INT NOT NULL,
+  role ENUM('owner','admin','user') NOT NULL DEFAULT 'user',
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_account_user (account_id, user_id),
+  INDEX idx_account_users_account_id (account_id),
+  INDEX idx_account_users_user_id (user_id),
+
+  CONSTRAINT fk_account_users_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_account_users_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: CTS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS cts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  nome VARCHAR(150) NOT NULL,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_ct_nome_por_account (account_id, nome),
+  INDEX idx_ct_account_id (account_id),
+  INDEX idx_ct_ativo (ativo),
+
+  CONSTRAINT fk_ct_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: TRANSACOES
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS transacoes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  ct_id INT NULL,
+  tipo ENUM('receita','despesa') NOT NULL,
+  descricao VARCHAR(255) NOT NULL,
+  valor DECIMAL(10,2) NOT NULL,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  INDEX idx_transacoes_account_id (account_id),
+  INDEX idx_transacoes_ct_id (ct_id),
+  INDEX idx_transacoes_data (criado_em),
+  INDEX idx_transacoes_account_data (account_id, criado_em),
+
+  CONSTRAINT fk_transacoes_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE RESTRICT,
+
+  CONSTRAINT fk_transacoes_ct
+    FOREIGN KEY (ct_id) REFERENCES cts(id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- DADOS INICIAIS (SEED)
+-- ============================================
+
+-- Conta principal
+INSERT INTO accounts (nome, tipo, plano, status)
+VALUES ('Conta Principal', 'ct_owner', 'basic', 'ativo');
+
+-- Usuário admin
+-- senha original ilustrativa: 123456
+INSERT INTO users (nome, email, senha_hash, ativo)
+VALUES (
+  'Admin',
+  'admin@admin.com',
+  '$2b$10$7aX8mQ0w7J5Y9zR9Vx1k2e6mN4pQf2W8sL0gB3nD1cH5uT7rK9y1a',
+  TRUE
+);
+
+-- Vincular usuário à conta
+INSERT INTO account_users (account_id, user_id, role, ativo)
+VALUES (1, 1, 'owner', TRUE);
+
+-- CTs de exemplo
+INSERT INTO cts (account_id, nome, ativo) VALUES
+(1, 'CT Centro', TRUE),
+(1, 'CT Zona Sul', TRUE);
+
+-- Transações de exemplo
+INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES
+(1, 1, 'receita', 'Mensalidade aluno', 150.00),
+(1, 1, 'despesa', 'Equipamento', 300.00),
+(1, NULL, 'despesa', 'Conta de luz geral', 200.00);
