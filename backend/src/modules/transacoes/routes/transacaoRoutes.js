@@ -28,8 +28,8 @@ roteador.get('/', listarTransacoes);
 roteador.post('/', validarTransacao, criarTransacao);
 
 // ⚠️ ID NUMÉRICO (proteção contra colisão de rota)
-roteador.get('/:id', validarIdNumerico, buscarTransacaoPorId);
-roteador.put('/:id', validarIdNumerico, validarTransacao, atualizarTransacao);
-roteador.delete('/:id', validarIdNumerico, deletarTransacao);
+roteador.get('/:id', buscarTransacaoPorId);
+roteador.put('/:id', validarTransacao, atualizarTransacao);
+roteador.delete('/:id', deletarTransacao);
 
 module.exports = roteador;

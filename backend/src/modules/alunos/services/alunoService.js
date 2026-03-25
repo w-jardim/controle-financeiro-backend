@@ -59,10 +59,17 @@ class AlunoService {
       throw this.criarErro('O campo ct_id é obrigatório', 400);
     }
 
-    return alunoRepository.criar({
-      ...dados,
-      accountId: accountIdValidado
-    });
+    try {
+      return await alunoRepository.criar({
+        ...dados,
+        accountId: accountIdValidado
+      });
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        throw this.criarErro('CPF já cadastrado', 409);
+      }
+      throw error;
+    }
   }
 
   async atualizar(id, dados, accountId) {
@@ -78,7 +85,14 @@ class AlunoService {
       throw this.criarErro('Aluno não encontrado', 404);
     }
 
-    return alunoRepository.atualizar(numeroId, accountIdValidado, dados);
+    try {
+      return await alunoRepository.atualizar(numeroId, accountIdValidado, dados);
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        throw this.criarErro('CPF já cadastrado', 409);
+      }
+      throw error;
+    }
   }
 
   async desativar(id, accountId) {

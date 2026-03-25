@@ -10,13 +10,15 @@ const {
   ativarAluno
 } = require('../controllers/alunoController');
 
-const validarIdNumerico = require('../../../shared/middlewares/validarIdNumerico');
-
 roteador.get('/', listarAlunos);
 roteador.post('/', criarAluno);
-roteador.patch('/:id/desativar', validarIdNumerico, desativarAluno);
-roteador.patch('/:id/ativar', validarIdNumerico, ativarAluno);
-roteador.get('/:id', validarIdNumerico, buscarAlunoPorId);
-roteador.put('/:id', validarIdNumerico, atualizarAluno);
+
+// Rotas específicas (nenhuma adicional por enquanto)
+
+// Rotas dinâmicas
+roteador.get('/:id', buscarAlunoPorId);
+roteador.put('/:id', atualizarAluno);
+roteador.delete('/:id', desativarAluno);
+roteador.patch('/:id/ativar', ativarAluno);
 
 module.exports = roteador;

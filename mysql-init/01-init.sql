@@ -104,6 +104,40 @@ CREATE TABLE IF NOT EXISTS transacoes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
+-- TABELA: ALUNOS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS alunos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  ct_id INT NOT NULL,
+  nome VARCHAR(150) NOT NULL,
+  cpf VARCHAR(14) NULL,
+  data_nascimento DATE NULL,
+  sexo VARCHAR(20) NULL,
+  telefone VARCHAR(20) NULL,
+  email VARCHAR(150) NULL,
+  nome_responsavel VARCHAR(150) NULL,
+  telefone_responsavel VARCHAR(20) NULL,
+  ativo TINYINT(1) DEFAULT 1,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_alunos_account_cpf (account_id, cpf),
+  INDEX idx_alunos_account_id (account_id),
+  INDEX idx_alunos_ct_id (ct_id),
+  INDEX idx_alunos_nome (nome),
+
+  CONSTRAINT fk_alunos_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_alunos_ct
+    FOREIGN KEY (ct_id) REFERENCES cts(id)
+    ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
 -- DADOS INICIAIS (SEED)
 -- ============================================
 
