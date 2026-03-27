@@ -1,8 +1,21 @@
+const path = require('path');
+
+// Garantir que dotenv está carregado (fallback de segurança)
+// Jest já carrega via setupFilesAfterEnv, mas isso garante mesmo se executado diretamente
+if (!process.env.DB_NAME && process.env.NODE_ENV === 'test') {
+  require('dotenv').config({
+    path: path.resolve(__dirname, '../../.env.test')
+  });
+}
+
 const conexao = require('../../src/shared/database/connection');
 
 const TABELAS = [
   'transacoes',
   'alunos',
+  'profissionais',
+  'modalidades',
+  'horarios_aula',
   'cts',
   'account_users',
   'users',

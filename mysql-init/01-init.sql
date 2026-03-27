@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS transacoes (
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
+  UNIQUE KEY uq_transacoes_account_tipo_descricao (account_id, tipo, descricao),
   INDEX idx_transacoes_account_id (account_id),
   INDEX idx_transacoes_ct_id (ct_id),
   INDEX idx_transacoes_data (criado_em),
@@ -124,6 +125,8 @@ CREATE TABLE IF NOT EXISTS alunos (
   atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   UNIQUE KEY uq_alunos_account_cpf (account_id, cpf),
+  UNIQUE KEY uq_alunos_nome_data (account_id, nome, data_nascimento),
+  UNIQUE KEY uq_alunos_nome_telefone (account_id, nome, telefone),
   INDEX idx_alunos_account_id (account_id),
   INDEX idx_alunos_ct_id (ct_id),
   INDEX idx_alunos_nome (nome),
@@ -136,6 +139,91 @@ CREATE TABLE IF NOT EXISTS alunos (
     FOREIGN KEY (ct_id) REFERENCES cts(id)
     ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: PROFISSIONAIS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS profissionais (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  nome VARCHAR(150) NOT NULL,
+  email VARCHAR(150) NULL,
+  telefone VARCHAR(20) NULL,
+  especialidade VARCHAR(100) NULL,
+  ativo TINYINT(1) DEFAULT 1,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_profissionais_nome_telefone (account_id, nome, telefone),
+  INDEX idx_profissionais_account_id (account_id),
+  INDEX idx_profissionais_nome (nome),
+
+  CONSTRAINT fk_profissionais_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: MODALIDADES
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS modalidades (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  nome VARCHAR(150) NOT NULL,
+  descricao VARCHAR(255) NULL,
+  ativo TINYINT(1) DEFAULT 1,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_modalidades_account_nome (account_id, nome),
+  INDEX idx_modalidades_account_id (account_id),
+  INDEX idx_modalidades_nome (nome),
+
+  CONSTRAINT fk_modalidades_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: HORARIOS_AULA
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS horarios_aula (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  ct_id INT NOT NULL,
+  profissional_id INT NOT NULL,
+  modalidade_id INT NOT NULL,
+  dia_semana TINYINT NOT NULL,
+  hora_inicio TIME NOT NULL,
+  hora_fim TIME NOT NULL,
+  limite_vagas INT NULL,
+  ativo TINYINT(1) DEFAULT 1,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_horarios_account_id (account_id),
+  INDEX idx_horarios_ct_id (ct_id),
+  INDEX idx_horarios_profissional_id (profissional_id),
+  INDEX idx_horarios_modalidade_id (modalidade_id),
+
+  CONSTRAINT fk_horarios_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_horarios_ct
+    FOREIGN KEY (ct_id) REFERENCES cts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_horarios_profissional
+    FOREIGN KEY (profissional_id) REFERENCES profissionais(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_horarios_modalidade
+    FOREIGN KEY (modalidade_id) REFERENCES modalidades(id)
+    ON DELETE CASCADE
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
 -- DADOS INICIAIS (SEED)
@@ -166,18 +254,6 @@ INSERT INTO cts (account_id, nome, ativo) VALUES
 
 -- Transações de exemplo
 INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES
-(1, 1, 'receita', 'Mensalidade aluno', 150.00),
-(1, 1, 'despesa', 'Equipamento', 300.00),
-(1, NULL, 'despesa', 'Conta de luz geral', 200.00);
-
--- Ensure unique constraints expected by application exist (safe to run multiple times)
--- Drop existing named index if present, then create with expected name
-ALTER TABLE transacoes DROP INDEX IF EXISTS uq_transacoes_account_tipo_descricao;
-ALTER TABLE transacoes
-  ADD UNIQUE KEY uq_transacoes_account_tipo_descricao (account_id, tipo, descricao);
-
-ALTER TABLE alunos DROP INDEX IF EXISTS uq_alunos_nome_data;
-ALTER TABLE alunos DROP INDEX IF EXISTS uq_alunos_nome_telefone;
-ALTER TABLE alunos
-  ADD UNIQUE KEY uq_alunos_nome_data (account_id, nome, data_nascimento),
-  ADD UNIQUE KEY uq_alunos_nome_telefone (account_id, nome, telefone);
+(1, 1, 'receita', 'Mensalidade aluno', 150.00),;
+ALTER TABLE profissionais
+  ADD UNIQUE KEY uq_profissionais_nome_telefone (account_id, nome, telefone);

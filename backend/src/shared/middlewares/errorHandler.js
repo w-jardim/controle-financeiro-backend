@@ -31,6 +31,10 @@ function errorHandler(erro, req, res, next) {
       }
     }
 
+    if (sqlMessageLower.includes('uq_profissionais_nome_telefone')) {
+      return res.status(409).json({ status: 'erro', mensagem: 'Já existe profissional com mesmo nome e telefone' });
+    }
+
     // Fallback generic message for other duplicate key errors
     return res.status(409).json({ status: 'erro', mensagem: 'Registro duplicado' });
   }

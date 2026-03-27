@@ -1,0 +1,497 @@
+================================================================================
+MÓDULO PROFISSIONAIS - DOCUMENTAÇÃO TÉCNICA
+Data: 2026-03-27
+================================================================================
+
+RESUMO
+------
+Módulo completo de gestão de profissionais para o sistema de CT de Artes Marciais,
+seguindo o padrão arquitetural já estabelecido (auth, cts, alunos, transacoes).
+
+
+================================================================================
+ARQUIVOS CRIADOS
+================================================================================
+
+1. Camada de Dados
+------------------
+mysql-init/01-init.sql
+  → Tabela profissionais (id, account_id, nome, email, telefone, especialidade, ativo, timestamps)
+  → Constraint UNIQUE: uq_profissionais_nome_telefone (account_id, nome, telefone)
+  → INDEX: idx_profissionais_account_id, idx_profissionais_nome
+  → FK: fk_profissionais_account (account_id → accounts.id ON DELETE CASCADE)
+
+
+2. Backend - Repository
+------------------------
+backend/src/modules/profissionais/repositories/profissionalRepository.js
+  Métodos:
+    - listar({ limite, offset, accountId })
+    - buscarPorId(id, accountId)
+    - existePorNomeETelefone(nome, telefone, accountId)
+    - existePorNomeETelefoneIgnorandoId(nome, telefone, accountId, id)
+    - criar({ accountId, nome, email, telefone, especialidade })
+    - atualizar(id, accountId, dados)
+    - alterarStatus(id, accountId, ativo)
+
+
+3. Backend - Service
+--------------------
+backend/src/modules/profissionais/services/profissionalService.js
+  Métodos:
+    - listar(query, accountId) → retorna paginado
+    - buscarPorId(id, accountId)
+    - criar(dados, accountId)
+    - atualizar(id, dados, accountId)
+    - desativar(id, accountId)
+    - ativar(id, accountId)
+
+  Validações:
+    ✓ accountId obrigatório
+    ✓ nome obrigatório
+    ✓ não permitir duplicidade de nome + telefone por conta
+    ✓ campos numéricos (id) validados
+    ✓ paginação com parâmetros page/pagina e limit/limite
+
+
+4. Backend - Controller
+------------------------
+backend/src/modules/profissionais/controllers/profissionalController.js
+  Endpoints mapeados:
+    - listarProfissionais
+    - buscarProfissionalPorId
+    - criarProfissional
+    - atualizarProfissional
+    - desativarProfissional
+    - ativarProfissional
+
+  Pattern: asyncHandler para captura de erros
+
+
+5. Backend - Routes
+-------------------
+backend/src/modules/profissionais/routes/profissionalRoutes.js
+  Rotas:
+    GET    /profissionais               → listarProfissionais
+    POST   /profissionais               → criarProfissional
+    GET    /profissionais/:id           → buscarProfissionalPorId
+    PUT    /profissionais/:id           → atualizarProfissional
+    PATCH  /profissionais/:id/ativar    → ativarProfissional
+    PATCH  /profissionais/:id/desativar → desativarProfissional
+
+  Middlewares aplicados:
+    - validarIdNumerico (rotas com :id)
+
+
+6. Backend - Module
+-------------------
+backend/src/modules/profissionais/module.js
+  Exporta:
+    - registrarRotasProfissionais(app)
+
+
+7. Integração com App
+---------------------
+backend/src/app.js
+  Mudanças:
+    - import { registrarRotasProfissionais }
+    - app.use('/profissionais', authMiddleware)
+    - registrarRotasProfissionais(app)
+
+
+8. Error Handler
+----------------
+backend/src/shared/middlewares/errorHandler.js
+  Adicionado mapping:
+    - uq_profissionais_nome_telefone → 'Já existe profissional com mesmo nome e telefone'
+
+
+9. Testes de Integração
+------------------------
+backend/tests/integration/profissionais.spec.js
+  10 test cases:
+    ✓ acesso negado sem token
+    ✓ listar profissionais autenticado (vazio inicialmente)
+    ✓ criar profissional com sucesso
+    ✓ validar campos obrigatórios ao criar (nome)
+    ✓ impedir duplicidade de nome + telefone por conta
+    ✓ buscar profissional por id da própria conta
+    ✓ atualizar profissional
+    ✓ desativar profissional
+    ✓ ativar profissional
+    ✓ garantir isolamento por account para profissionais
+    ✓ listar profissionais com paginação
+
+
+10. Helper de Testes
+---------------------
+backend/tests/helpers/db.js
+  Atualizado:
+    - TABELAS → adicionado 'profissionais' (ordem preservada para FKs)
+
+
+================================================================================
+ESTRUTURA DO MÓDULO (ÁRVORE)
+================================================================================
+
+backend/src/modules/profissionais/
+├── module.js                           # Export principal do módulo
+├── routes/
+│   └── profissionalRoutes.js           # Definição das rotas
+├── controllers/
+│   └── profissionalController.js       # Handlers HTTP
+├── services/
+│   └── profissionalService.js          # Lógica de negócio
+└── repositories/
+    └── profissionalRepository.js       # Camada de acesso a dados
+
+
+================================================================================
+MODELO DE DADOS
+================================================================================
+
+Tabela: profissionais
+---------------------
+Campo               Tipo            Constraints
+--------------      ------------    ------------------------------------
+id                  INT             PRIMARY KEY AUTO_INCREMENT
+account_id          INT             NOT NULL, FK → accounts.id CASCADE
+nome                VARCHAR(150)    NOT NULL
+email               VARCHAR(150)    NULL
+telefone            VARCHAR(20)     NULL
+especialidade       VARCHAR(100)    NULL
+ativo               TINYINT(1)      DEFAULT 1
+criado_em           TIMESTAMP       DEFAULT CURRENT_TIMESTAMP
+atualizado_em       TIMESTAMP       DEFAULT CURRENT_TIMESTAMP ON UPDATE
+
+Constraints:
+  - UNIQUE (account_id, nome, telefone)
+  - INDEX (account_id)
+  - INDEX (nome)
+
+
+================================================================================
+REGRAS DE NEGÓCIO APLICADAS
+================================================================================
+
+1. Multi-tenancy
+   ✓ Profissional pertence a uma account (account_id obrigatório)
+   ✓ Todas as queries filtradas por account_id
+   ✓ Isolamento total entre contas
+
+2. Duplicidade
+   ✓ Não permitir nome + telefone duplicados por conta
+   ✓ Validação prévia no service + constraint no banco
+   ✓ Erro 409 com mensagem específica
+
+3. Campos obrigatórios
+   ✓ nome (obrigatório)
+   ✓ email (opcional)
+   ✓ telefone (opcional, mas usado para validação duplicidade)
+   ✓ especialidade (opcional)
+
+4. Soft delete
+   ✓ Campo 'ativo' (boolean)
+   ✓ Endpoints PATCH /:id/ativar e /:id/desativar
+   ✓ Não remove do banco
+
+5. Autenticação
+   ✓ Todas as rotas protegidas por JWT (authMiddleware)
+   ✓ accountId extraído do token
+
+6. Paginação
+   ✓ Parâmetros: page/pagina (default: 1), limit/limite (default: 10)
+   ✓ Resposta: { pagina, limite, total, totalPaginas, dados }
+
+
+================================================================================
+ENDPOINTS - DETALHAMENTO
+================================================================================
+
+1. POST /profissionais
+   Request Body:
+     {
+       "nome": "Carlos Silva",           # obrigatório
+       "email": "carlos@email.com",      # opcional
+       "telefone": "21999999999",        # opcional
+       "especialidade": "Jiu-Jitsu"      # opcional
+     }
+
+   Response 201:
+     {
+       "mensagem": "Profissional criado com sucesso",
+       "id": 1
+     }
+
+   Erros:
+     400 → nome ausente ou inválido
+     409 → duplicidade nome + telefone
+
+
+2. GET /profissionais?page=1&limit=10
+   Response 200:
+     {
+       "pagina": 1,
+       "limite": 10,
+       "total": 25,
+       "totalPaginas": 3,
+       "dados": [ {...}, {...} ]
+     }
+
+
+3. GET /profissionais/:id
+   Response 200:
+     {
+       "id": 1,
+       "account_id": 1,
+       "nome": "Carlos Silva",
+       "email": "carlos@email.com",
+       "telefone": "21999999999",
+       "especialidade": "Jiu-Jitsu",
+       "ativo": 1,
+       "criado_em": "2026-03-27T...",
+       "atualizado_em": "2026-03-27T..."
+     }
+
+   Erros:
+     400 → id inválido
+     404 → profissional não encontrado ou não pertence à conta
+
+
+4. PUT /profissionais/:id
+   Request Body:
+     {
+       "nome": "Carlos Silva Jr.",        # opcional
+       "email": "novoemail@email.com",    # opcional
+       "telefone": "21988888888",         # opcional
+       "especialidade": "Muay Thai",      # opcional
+       "ativo": true                      # opcional
+     }
+
+   Response 200:
+     { ...profissional atualizado }
+
+   Erros:
+     400 → id inválido ou nenhum campo para atualizar
+     404 → profissional não encontrado
+     409 → duplicidade nome + telefone
+
+
+5. PATCH /profissionais/:id/desativar
+   Response 200:
+     {
+       "mensagem": "Profissional desativado com sucesso"
+     }
+
+
+6. PATCH /profissionais/:id/ativar
+   Response 200:
+     {
+       "mensagem": "Profissional ativado com sucesso"
+     }
+
+
+================================================================================
+TRECHOS PRINCIPAIS - CODE SNIPPETS
+================================================================================
+
+1. Validação de duplicidade no Service (profissionalService.js)
+----------------------------------------------------------------
+// Validação de duplicidade: nome + telefone
+if (nome && telefone) {
+  const jaExiste = await profissionalRepository.existePorNomeETelefone(
+    nome,
+    telefone,
+    accountId
+  );
+
+  if (jaExiste) {
+    throw new AppError('Já existe profissional com mesmo nome e telefone', 409);
+  }
+}
+
+
+2. Paginação no Service (profissionalService.js)
+-------------------------------------------------
+const pagina = Number(query.page || query.pagina || 1);
+const limite = Number(query.limit || query.limite || 10);
+
+if (!Number.isInteger(pagina) || pagina <= 0) {
+  throw new AppError('Parâmetro page deve ser um número maior que zero', 400);
+}
+
+const offset = (pagina - 1) * limite;
+const resultado = await profissionalRepository.listar({
+  limite,
+  offset,
+  accountId
+});
+
+return {
+  pagina,
+  limite,
+  total: resultado.total,
+  totalPaginas: Math.ceil(resultado.total / limite),
+  dados: resultado.dados
+};
+
+
+3. Repository - Query com isolamento (profissionalRepository.js)
+-----------------------------------------------------------------
+async buscarPorId(id, accountId) {
+  if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+  const [linhas] = await conexao.query(
+    'SELECT * FROM profissionais WHERE id = ? AND account_id = ?',
+    [id, accountId]
+  );
+
+  return linhas[0] || null;
+}
+
+
+4. Teste de isolamento entre contas (profissionais.spec.js)
+------------------------------------------------------------
+it('garantir isolamento por account para profissionais', async () => {
+  const a = await criarContaELogar({ 
+    email: `a${Date.now()}@example.com`, 
+    nomeAccount: 'Conta A' 
+  });
+  const b = await criarContaELogar({ 
+    email: `b${Date.now()}@example.com`, 
+    nomeAccount: 'Conta B' 
+  });
+
+  const createB = await request(app)
+    .post('/profissionais')
+    .set('Authorization', `Bearer ${b.token}`)
+    .send({ nome: 'Profissional Conta B', telefone: '21999999999' });
+
+  const idB = createB.body.id;
+
+  const listA = await request(app)
+    .get('/profissionais')
+    .set('Authorization', `Bearer ${a.token}`);
+
+  expect(listA.status).toBe(200);
+  const found = (listA.body.dados || []).find((p) => p.id === idB);
+  expect(found).toBeUndefined();
+
+  const getA = await request(app)
+    .get(`/profissionais/${idB}`)
+    .set('Authorization', `Bearer ${a.token}`);
+
+  expect(getA.status).toBe(404);
+});
+
+
+================================================================================
+COMANDOS PARA VALIDAR
+================================================================================
+
+1. Reconstruir banco com nova tabela
+-------------------------------------
+docker compose -f docker-compose.test.yml down -v
+docker compose -f docker-compose.test.yml up -d
+
+# Aguardar healthcheck
+while ((docker inspect -f '{{.State.Health.Status}}' controlador_financeiro_mysql_test) -ne 'healthy') { 
+  Start-Sleep -Seconds 1 
+}
+
+
+2. Verificar tabela e constraints no MySQL
+-------------------------------------------
+docker exec -it controlador_financeiro_mysql_test mysql -utest_user -ptest_pass -Dcontrolador_financeiro_test -e "
+  DESCRIBE profissionais;
+  SHOW INDEX FROM profissionais WHERE Key_name = 'uq_profissionais_nome_telefone';
+"
+
+
+3. Rodar todos os testes
+-------------------------
+cd backend
+npm run test:with-db
+
+
+4. Rodar apenas testes de profissionais
+----------------------------------------
+cd backend
+npx cross-env NODE_ENV=test npx jest --runInBand --testPathPattern="profissionais"
+
+
+5. Rodar servidor e testar endpoints manualmente
+-------------------------------------------------
+cd backend
+npm run dev
+
+# Em outro terminal (após obter token de login):
+$token = "seu_token_jwt_aqui"
+
+# Criar profissional
+curl -X POST http://localhost:3000/profissionais `
+  -H "Authorization: Bearer $token" `
+  -H "Content-Type: application/json" `
+  -d '{"nome":"Carlos Silva","email":"carlos@email.com","telefone":"21999999999","especialidade":"Jiu-Jitsu"}'
+
+# Listar profissionais
+curl -X GET http://localhost:3000/profissionais `
+  -H "Authorization: Bearer $token"
+
+# Buscar por ID
+curl -X GET http://localhost:3000/profissionais/1 `
+  -H "Authorization: Bearer $token"
+
+
+================================================================================
+COMPATIBILIDADE COM MÓDULOS EXISTENTES
+================================================================================
+
+Padrão seguido:
+  ✓ Mesma estrutura de pastas (routes, controllers, services, repositories)
+  ✓ Mesmo padrão de nomenclatura (module.js, asyncHandler, AppError)
+  ✓ Registro no app.js idêntico aos outros módulos
+  ✓ Testes seguem mesmo padrão (helpers reutilizados, mesma estrutura)
+  ✓ Paginação igual a cts e transacoes
+  ✓ Soft delete igual a cts
+  ✓ Multi-tenancy igual a todos os módulos
+
+
+Reutilização de código:
+  ✓ asyncHandler (shared/utils)
+  ✓ AppError (shared/errors)
+  ✓ authMiddleware (shared/middlewares)
+  ✓ validarIdNumerico (shared/middlewares)
+  ✓ conexao (shared/database)
+  ✓ Helpers de teste (auth.js, db.js)
+
+
+================================================================================
+PRÓXIMOS PASSOS RECOMENDADOS
+================================================================================
+
+1. Validar testes passando
+   cd backend && npm run test:with-db
+
+2. Testar endpoints via Postman/Thunder Client
+   - Criar coleção com os 6 endpoints
+   - Testar fluxo completo (criar → listar → buscar → atualizar → desativar → ativar)
+
+3. Documentar no README principal
+   - Adicionar seção sobre profissionais
+   - Atualizar diagrama de módulos (se houver)
+
+4. Planejar evoluções futuras
+   - Vincular profissionais a turmas (quando módulo turmas for criado)
+   - Vincular profissionais a agendamentos
+   - Adicionar campos adicionais (CPF, RG, endereço, contratos)
+   - Relatórios de profissionais por especialidade
+
+5. Deploy em homolog
+   - Aplicar migrations do SQL em ambiente de homologação
+   - Validar isolamento multi-tenant em ambiente real
+
+
+================================================================================
+FIM DA DOCUMENTAÇÃO
+================================================================================
