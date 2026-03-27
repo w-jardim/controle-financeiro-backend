@@ -1,4 +1,5 @@
 const alunoRepository = require('../repositories/alunoRepository');
+const ctRepository = require('../../cts/repositories/ctRepository');
 const AppError = require('../../../shared/errors/AppError');
 
 class AlunoService {
@@ -59,6 +60,41 @@ class AlunoService {
       throw this.criarErro('O campo ct_id é obrigatório', 400);
     }
 
+    const ctExiste = await ctRepository.buscarPorId(dados.ct_id, accountIdValidado);
+    if (!ctExiste) {
+      throw this.criarErro('CT não encontrado para a conta informada', 404);
+    }
+
+    // Validações de duplicidade
+    if (dados.cpf && String(dados.cpf).trim()) {
+      const cpfExiste = await alunoRepository.existePorCpf(dados.cpf, accountIdValidado);
+      if (cpfExiste) {
+        throw this.criarErro('Já existe aluno com este CPF', 409);
+      }
+    }
+
+    if (dados.nome && dados.data_nascimento) {
+      const nomeDataExiste = await alunoRepository.existePorNomeEDataNascimento(
+        dados.nome,
+        dados.data_nascimento,
+        accountIdValidado
+      );
+      if (nomeDataExiste) {
+        throw this.criarErro('Já existe aluno com mesmo nome e data de nascimento', 409);
+      }
+    }
+
+    if (dados.nome && dados.telefone) {
+      const nomeTelefoneExiste = await alunoRepository.existePorNomeETelefone(
+        dados.nome,
+        dados.telefone,
+        accountIdValidado
+      );
+      if (nomeTelefoneExiste) {
+        throw this.criarErro('Já existe aluno com mesmo nome e telefone', 409);
+      }
+    }
+
     try {
       return await alunoRepository.criar({
         ...dados,
@@ -66,7 +102,17 @@ class AlunoService {
       });
     } catch (error) {
       if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
-        throw this.criarErro('CPF já cadastrado', 409);
+        const sqlMessage = (error && error.sqlMessage) || '';
+        if (sqlMessage.includes('uq_alunos_account_cpf')) {
+          throw this.criarErro('CPF já cadastrado', 409);
+        }
+        if (sqlMessage.includes('uq_alunos_nome_data')) {
+          throw this.criarErro('Já existe aluno com mesmo nome e data de nascimento', 409);
+        }
+        if (sqlMessage.includes('uq_alunos_nome_telefone')) {
+          throw this.criarErro('Já existe aluno com mesmo nome e telefone', 409);
+        }
+        throw this.criarErro('Registro duplicado', 409);
       }
       throw error;
     }
@@ -85,13 +131,71 @@ class AlunoService {
       throw this.criarErro('Aluno não encontrado', 404);
     }
 
+    if (dados.ct_id) {
+      const ctExiste = await ctRepository.buscarPorId(dados.ct_id, accountIdValidado);
+      if (!ctExiste) {
+        throw this.criarErro('CT não encontrado para a conta informada', 404);
+      }
+    }
+
+    // Ajustes para validações de duplicidade (trim obrigatório e fallback para campos)
+    const nome = dados.nome ?? alunoExistente.nome;
+    const dataNascimento = dados.data_nascimento ?? alunoExistente.data_nascimento;
+    const telefone = dados.telefone ?? alunoExistente.telefone;
+
+    // Validações de duplicidade
+    if (dados.cpf && String(dados.cpf).trim()) {
+      const cpfExiste = await alunoRepository.existePorCpfIgnorandoId(
+        dados.cpf,
+        accountIdValidado,
+        numeroId
+      );
+      if (cpfExiste) {
+        throw this.criarErro('Já existe aluno com este CPF', 409);
+      }
+    }
+
+    if (nome && dataNascimento) {
+      const nomeDataExiste = await alunoRepository.existePorNomeEDataNascimentoIgnorandoId(
+        nome,
+        dataNascimento,
+        accountIdValidado,
+        numeroId
+      );
+      if (nomeDataExiste) {
+        throw this.criarErro('Já existe aluno com mesmo nome e data de nascimento', 409);
+      }
+    }
+
+    if (nome && telefone) {
+      const nomeTelefoneExiste = await alunoRepository.existePorNomeETelefoneIgnorandoId(
+        nome,
+        telefone,
+        accountIdValidado,
+        numeroId
+      );
+      if (nomeTelefoneExiste) {
+        throw this.criarErro('Já existe aluno com mesmo nome e telefone', 409);
+      }
+    }
+
     try {
       return await alunoRepository.atualizar(numeroId, accountIdValidado, dados);
     } catch (error) {
-      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
-        throw this.criarErro('CPF já cadastrado', 409);
-      }
-      throw error;
+        if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+          const sqlMessage = (error && error.sqlMessage) || '';
+          if (sqlMessage.includes('uq_alunos_account_cpf')) {
+            throw this.criarErro('CPF já cadastrado', 409);
+          }
+          if (sqlMessage.includes('uq_alunos_nome_data')) {
+            throw this.criarErro('Já existe aluno com mesmo nome e data de nascimento', 409);
+          }
+          if (sqlMessage.includes('uq_alunos_nome_telefone')) {
+            throw this.criarErro('Já existe aluno com mesmo nome e telefone', 409);
+          }
+          throw this.criarErro('Registro duplicado', 409);
+        }
+        throw error;
     }
   }
 

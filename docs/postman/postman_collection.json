@@ -14,7 +14,6 @@
   ],
 
   "item": [
-
     {
       "name": "Status",
       "item": [
@@ -24,7 +23,6 @@
         { "name": "Teste Banco", "request": { "method": "GET", "url": "{{baseUrl}}/teste-banco" } }
       ]
     },
-
     {
       "name": "Auth",
       "item": [
@@ -63,7 +61,6 @@
         }
       ]
     },
-
     {
       "name": "CTs",
       "item": [
@@ -98,7 +95,6 @@
         }
       ]
     },
-
     {
       "name": "Alunos",
       "item": [
@@ -136,7 +132,6 @@
         }
       ]
     },
-
     {
       "name": "Transações",
       "item": [
@@ -174,6 +169,5 @@
         }
       ]
     }
-
   ]
 }

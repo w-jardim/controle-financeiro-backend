@@ -195,14 +195,14 @@ curl -X POST http://localhost:3000/auth/cadastro \
 
 Dois arquivos JSON estão prontos na raiz do projeto para facilitar testes:
 
-1. **[AUTH_CADASTRO_CT_OWNER.json](../AUTH_CADASTRO_CT_OWNER.json)** - Cadastro de CT Owner com CT inicial
-2. **[AUTH_CADASTRO_PROFISSIONAL.json](../AUTH_CADASTRO_PROFISSIONAL.json)** - Cadastro de Profissional Autônomo sem CT
+1. **[AUTH_CADASTRO_CT_OWNER.json](backend/tests/fixtures/AUTH_CADASTRO_CT_OWNER.json)** - Cadastro de CT Owner com CT inicial
+2. **[AUTH_CADASTRO_PROFISSIONAL.json](backend/tests/fixtures/AUTH_CADASTRO_PROFISSIONAL.json)** - Cadastro de Profissional Autônomo sem CT
 
 ### Como usar com curl:
 ```bash
 curl -X POST http://localhost:3000/auth/cadastro \
   -H "Content-Type: application/json" \
-  -d @AUTH_CADASTRO_CT_OWNER.json
+  -d @backend/tests/fixtures/AUTH_CADASTRO_CT_OWNER.json
 ```
 
 ---

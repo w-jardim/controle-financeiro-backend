@@ -1,4 +1,5 @@
 const repository = require('../repositories/transacaoRepository');
+const ctRepository = require('../../cts/repositories/ctRepository');
 const AppError = require('../../../shared/errors/AppError');
 
 class TransacaoService {
@@ -114,6 +115,13 @@ class TransacaoService {
     const numeroLimite = Number(limite);
     const ctIdValidado = this.validarCtId(ct_id);
 
+    if (ctIdValidado !== null) {
+      const ctExiste = await ctRepository.buscarPorId(ctIdValidado, accountIdValidado);
+      if (!ctExiste) {
+        throw this.criarErro('CT não encontrado para a conta informada', 404);
+      }
+    }
+
     if (isNaN(numeroPagina) || numeroPagina <= 0) {
       throw this.criarErro(
         'Parâmetro pagina deve ser um número maior que zero',
@@ -208,6 +216,13 @@ class TransacaoService {
     const valor = this.validarValor(dados.valor);
     const ctIdValidado = this.validarCtId(dados.ct_id);
 
+    if (ctIdValidado !== null) {
+      const ctExiste = await ctRepository.buscarPorId(ctIdValidado, accountIdValidado);
+      if (!ctExiste) {
+        throw this.criarErro('CT não encontrado para a conta informada', 404);
+      }
+    }
+
     const jaExiste = await repository.existePorTipoEDescricao(
       tipo,
       descricao,
@@ -220,19 +235,25 @@ class TransacaoService {
         409
       );
     }
+    try {
+      const resultado = await repository.criar({
+        accountId: accountIdValidado,
+        ct_id: ctIdValidado,
+        tipo,
+        descricao,
+        valor
+      });
 
-    const resultado = await repository.criar({
-      accountId: accountIdValidado,
-      ct_id: ctIdValidado,
-      tipo,
-      descricao,
-      valor
-    });
-
-    return {
-      mensagem: 'Transação criada com sucesso',
-      id: resultado.id
-    };
+      return {
+        mensagem: 'Transação criada com sucesso',
+        id: resultado.id
+      };
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        throw this.criarErro('Já existe uma transação com esse tipo e descrição', 409);
+      }
+      throw error;
+    }
   }
 
   async atualizar(id, dados, accountId) {
@@ -243,6 +264,13 @@ class TransacaoService {
     const descricao = this.validarDescricao(dados.descricao);
     const valor = this.validarValor(dados.valor);
     const ctIdValidado = this.validarCtId(dados.ct_id);
+
+    if (ctIdValidado !== null) {
+      const ctExiste = await ctRepository.buscarPorId(ctIdValidado, accountIdValidado);
+      if (!ctExiste) {
+        throw this.criarErro('CT não encontrado para a conta informada', 404);
+      }
+    }
 
     const jaExiste = await repository.existePorTipoEDescricaoIgnorandoId(
       tipo,
@@ -258,24 +286,31 @@ class TransacaoService {
       );
     }
 
-    const resultado = await repository.atualizar(
-      numeroId,
-      accountIdValidado,
-      {
-        tipo,
-        descricao,
-        valor,
-        ct_id: ctIdValidado
+    try {
+      const resultado = await repository.atualizar(
+        numeroId,
+        accountIdValidado,
+        {
+          tipo,
+          descricao,
+          valor,
+          ct_id: ctIdValidado
+        }
+      );
+
+      if (resultado.afetadas === 0) {
+        throw this.criarErro('Transação não encontrada', 404);
       }
-    );
 
-    if (resultado.afetadas === 0) {
-      throw this.criarErro('Transação não encontrada', 404);
+      return {
+        mensagem: 'Transação atualizada com sucesso'
+      };
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        throw this.criarErro('Já existe uma transação com esse tipo e descrição', 409);
+      }
+      throw error;
     }
-
-    return {
-      mensagem: 'Transação atualizada com sucesso'
-    };
   }
 
   async deletar(id, accountId) {
@@ -297,6 +332,13 @@ class TransacaoService {
     const { mes, ano, ct_id } = query;
     const accountIdValidado = this.validarAccountId(accountId);
     const ctIdValidado = this.validarCtId(ct_id);
+
+    if (ctIdValidado !== null) {
+      const ctExiste = await ctRepository.buscarPorId(ctIdValidado, accountIdValidado);
+      if (!ctExiste) {
+        throw this.criarErro('CT não encontrado para a conta informada', 404);
+      }
+    }
 
     if ((mes && !ano) || (!mes && ano)) {
       throw this.criarErro('Informe mes e ano juntos', 400);
@@ -358,6 +400,13 @@ class TransacaoService {
     const { ano, ct_id } = query;
     const accountIdValidado = this.validarAccountId(accountId);
     const ctIdValidado = this.validarCtId(ct_id);
+
+    if (ctIdValidado !== null) {
+      const ctExiste = await ctRepository.buscarPorId(ctIdValidado, accountIdValidado);
+      if (!ctExiste) {
+        throw this.criarErro('CT não encontrado para a conta informada', 404);
+      }
+    }
 
     if (ano === undefined) {
       throw this.criarErro('Parâmetro ano é obrigatório', 400);

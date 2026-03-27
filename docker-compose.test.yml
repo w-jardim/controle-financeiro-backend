@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  mysql_test:
+    image: mysql:8.0
+    container_name: controlador_financeiro_mysql_test
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_test
+      MYSQL_DATABASE: controlador_financeiro_test
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: test_pass
+    volumes:
+      - mysql_data_test:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-proot_test"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+volumes:
+  mysql_data_test:
+    driver: local

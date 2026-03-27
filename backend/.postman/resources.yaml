@@ -3,4 +3,4 @@ workspace:
   id: bec8812e-47ba-4a5f-8978-fc1cae947337
 localResources:
   collections:
-    - ..\postman_collection.json
+    - ..\..\docs\postman\postman_collection.json

@@ -1,5 +1,9 @@
 const express = require('express');
 const roteador = express.Router();
+const authMiddleware = require('../../../shared/middlewares/authMiddleware');
+
+// Protege todas as rotas de alunos
+roteador.use(authMiddleware);
 
 const {
   listarAlunos,

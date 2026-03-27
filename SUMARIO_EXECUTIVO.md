@@ -1,108 +1,87 @@
-# 🔴 SUMÁRIO EXECUTIVO (1 página)
+# 🔔 SUMÁRIO EXECUTIVO (atualizado)
 
-## STATUS ATUAL: 30% Production-Ready
+## STATUS ATUAL: 55% Production-Ready (2026-03-27)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  BACKEND CONTROLE FINANCEIRO - DIAGNÓSTICO RÁPIDO           │
-└─────────────────────────────────────────────────────────────┘
+Resumo rápido:
 
-FUNCIONA?        | ✅ SIM (testes manuais OK)
-PRONTO PROD?     | ❌ NÃO (6 gaps críticos)
-QUEBRA COM >100? | 📍 SIM (sem testes, autenticação)
-SEGURO?          | 🟡 MEIO (CORS aberto, sem JWT)
-```
+- API modular funcionando (módulos: auth, cts, alunos, transacoes). App exporta `app` para testes.
+- Infra de testes implementada: Jest + Supertest com bootstrap (`tests/setup/jest.setup.js`) e `backend/.env.test` carregado em NODE_ENV=test.
+- Orquestração de DB de teste: `docker-compose.test.yml` canônico na raiz; `backend/package.json` contém scripts para subir/aguardar/derrubar o DB de teste.
+- Correções de qualidade: fixtures organizadas, collection Postman arquivada, `errorHandler` suprime logs em `test` para evitar poluição de output.
+
+Observações: várias melhorias organizacionais foram aplicadas; pendências técnicas importantes ainda existem (schema SQL e logging estruturado).
 
 ---
 
-## 🚨 5 CRÍTICOS SEM SOLUÇÃO:
+## Principais mudanças implementadas (desde última versão)
 
-| # | Problema | Risco | Prazo Fix |
-|---|----------|-------|-----------|
-| 1 | **Sem Testes** (0%) | Code quebra em prod | 8-10h |
-| 2 | **Controlador gigante** (398 lin) | Impossible refactor | 6-8h |
-| 3 | **Sem Autenticação** (qualquer acessa) | ILEGAL (LGPD) | 6-8h |
-| 4 | **console.log só** (sem logs) | Blind em produção | 3-4h |
-| 5 | **Sem Rate Limiting** | DDoS 1 click | 1-2h |
+- Testes e infra
+	- Configurado `jest` + `supertest`; smoke tests passaram (rota /saude etc.).
+	- `backend/tests/setup/jest.setup.js` fecha pool do MySQL no afterAll.
 
----
+- Ambiente de teste e Docker
+	- `docker-compose.test.yml` (raiz) orquestra MySQL de teste com healthcheck.
+	- Scripts em `backend/package.json`: `db:test:up`, `db:test:down`, `test:with-db` (aguarda healthy e executa testes).
 
-## ✅ O QUE JÁ ESTÁ BOM:
+- Autenticação / JWT
+	- `authService.login()` gera token via `src/shared/utils/jwt.js` (usa `process.env.JWT_SECRET`).
+	- `backend/.env.test.example` atualizado para incluir `JWT_SECRET`, `JWT_EXPIRES_IN`, `DB_PORT` e `NODE_ENV=test`.
 
-- ✅ API CRUD funciona (7 endpoints testados)
-- ✅ SQL Injection protegido (prepared statements)
-- ✅ UTF-8 português correto
-- ✅ Paginação eficiente
-- ✅ Docker compose bom
-- ✅ README 923 linhas excelente
-- ✅ TypeDB correto (DECIMAL para valores)
+- Organização e documentação
+	- Fixtures de teste movidas para `backend/tests/fixtures/`.
+	- Postman collection movida para `docs/postman/postman_collection.json` e referências atualizadas.
+	- Documentos antigos/backups arquivados em `docs/archive/`.
 
----
-
-## 📋 PLANO 2 SEMANAS PARA PRODUCTION:
-
-### SEMANA 1: ESSENCIAL (20-25h)
-
-```
-SEG: Refatorial 3 camadas (Controller → Service → Repository)
-TER-QUA: Testes automatizados (Jest + Supertest)
-QUI: Logs estruturados (Winston)
-SEX: Rate limit + Helmet + Limpeza
-
-RESULTADO: Estável, testável, observável
-```
-
-### SEMANA 2: PROFISSIONAL (15-20h)
-
-```
-SEG: JWT Authentication
-TER: Swagger API Docs
-QUA: API Versionamento (/v1/)
-QUI-SEX: CI/CD + Docker optimize
-
-RESULTADO: Production-ready 90%+
-```
+- Qualidade de logs durante testes
+	- `src/shared/middlewares/errorHandler.js` atualizado para não chamar `console.error` quando `NODE_ENV==='test'`.
 
 ---
 
-## 🎯 IMPACTO DE FAZER (2 semanas):
+## Riscos e pendências (a serem tratados antes de deploy)
 
-```
-ANTES:                          DEPOIS:
-├─ 0% test coverage      →     ├─ 70%+ test coverage
-├─ Qualquer acessa       →     ├─ JWT auth obrigatório
-├─ console.log chaos     →     ├─ Logs estruturados
-├─ DDoS vulnerability    →     ├─ Rate limiting
-└─ Deploy manual         →     └─ CI/CD automático
-```
+1. Schema SQL: `mysql-init/01-init.sql` não inclui alguns índices únicos esperados (`uq_alunos_nome_data`, `uq_alunos_nome_telefone`). Sem esses índices a lógica de tratamento de `ER_DUP_ENTRY` pode não mapear corretamente. (Ação: atualizar SQL e testar em homolog.)
 
----
+2. Logging estruturado: ainda não implementado (recomendado Winston/Pino). Atualmente há uso limitado de console; planejar migração para logger com níveis e rotação.
 
-## 🔴 RECOMENDAÇÃO FINAL:
+3. Rate limiting / security middlewares: implementar `express-rate-limit`, Helmet e CSP após estabilizar serviços principais.
 
-```
-🚫 NÃO vá para produção HOJE
-⏰ FAÇA em 2 semanas (FASE 1+2)
-✅ DEPOIS: Seguro, escalável, profissional
-```
+4. Revisão de arquivos raiz: `package.json` na raiz aparenta ser resíduo; revisar CI/pipelines antes de remover.
+
+5. Cobertura de testes: aumentar cobertura (alvo ≥70%) com testes de integração para `auth`, `cts`, `alunos`, `transacoes`.
 
 ---
 
-## 📁 ARQUIVOS CRIADOS:
+## Plano rápido (próximas 2 semanas — ajustado ao estado atual)
 
-- **AUDITORIA_TECNICA.md** (11 seções) - Análise completa
-- **PLANO_DE_ACAO.md** (código pronto copy-paste) - Implementação
-- **SUMARIO_EXECUTIVO.md** (este arquivo) - Quick read
+### Semana 1 — Estabilização (8-12 dias de esforço parcial)
+
+- Finalizar e executar a suíte de integração completa contra DB de teste (`npm run test:with-db`). Corrigir regressões.
+- Atualizar `mysql-init/01-init.sql` com índices faltantes e validar reaplicação (usar `docker compose down -v`).
+- Cobrir `auth` e `transacoes` com testes de integração adicionais (registro/login/duplicidade/transacao duplicada).
+
+### Semana 2 — Produção (após validação)
+
+- Implementar logging estruturado (Winston/Pino) e integrar no `errorHandler`.
+- Adicionar `express-rate-limit` e Helmet, executar testes de carga leve.
+- Documentação final: atualizar README com fluxo de testes e exemplo `.env.test` / CI.
+
+Resultado esperado ao fim: ambiente testado com DB isolado, JWT seguro, logs estruturados e proteção básica (rate limiting). Deploy seguro possível.
 
 ---
 
-## 💡 PRÓXIMA AÇÃO:
+## Arquivos criados/movidos nesta fase
 
-1. Ler AUDITORIA_TECNICA.md (30 min)
-2. Ler PLANO_DE_ACAO.md (30 min)
-3. Decidir: Fazer em 2 semanas? Ou MVP now + refactor later?
-4. Se SIM: Começar by refatoração controlador (FASE 1 - Tarefa 1)
+- `backend/tests/fixtures/*` (fixtures de auth)
+- `docs/postman/postman_collection.json` (coleção Postman arquivada)
+- `docs/archive/*` (arquivos e relatórios antigos)
+- `backend/.env.test.example` (atualizado com JWT_SECRET, DB_PORT, NODE_ENV=test)
 
 ---
 
-**Auditoria Completa Entregue** ✅ 2025
+## Recomendação final
+
+Seguir plano de 2 semanas adaptado: priorizar correção do schema SQL e execução completa da suíte de integração. Em paralelo, planejar logging estruturado e rate limiting. Todas as mudanças já aplicadas são reversíveis via git.
+
+---
+
+Se desejar, crio um branch `chore/update-docs-and-cleanup` com todas estas alterações prontas para revisão e PR.

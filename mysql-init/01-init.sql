@@ -169,3 +169,15 @@ INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES
 (1, 1, 'receita', 'Mensalidade aluno', 150.00),
 (1, 1, 'despesa', 'Equipamento', 300.00),
 (1, NULL, 'despesa', 'Conta de luz geral', 200.00);
+
+-- Ensure unique constraints expected by application exist (safe to run multiple times)
+-- Drop existing named index if present, then create with expected name
+ALTER TABLE transacoes DROP INDEX IF EXISTS uq_transacoes_account_tipo_descricao;
+ALTER TABLE transacoes
+  ADD UNIQUE KEY uq_transacoes_account_tipo_descricao (account_id, tipo, descricao);
+
+ALTER TABLE alunos DROP INDEX IF EXISTS uq_alunos_nome_data;
+ALTER TABLE alunos DROP INDEX IF EXISTS uq_alunos_nome_telefone;
+ALTER TABLE alunos
+  ADD UNIQUE KEY uq_alunos_nome_data (account_id, nome, data_nascimento),
+  ADD UNIQUE KEY uq_alunos_nome_telefone (account_id, nome, telefone);

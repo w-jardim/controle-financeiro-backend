@@ -143,6 +143,72 @@ class AlunoRepository {
 
     return this.buscarPorId(id, accountId);
   }
+
+  async existePorCpf(cpf, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    const [rows] = await conexao.execute(
+      'SELECT 1 FROM alunos WHERE account_id = ? AND cpf = ? LIMIT 1',
+      [accountId, cpf]
+    );
+
+    return rows.length > 0;
+  }
+
+  async existePorCpfIgnorandoId(cpf, accountId, id) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    const [rows] = await conexao.execute(
+      'SELECT 1 FROM alunos WHERE account_id = ? AND cpf = ? AND id <> ? LIMIT 1',
+      [accountId, cpf, id]
+    );
+
+    return rows.length > 0;
+  }
+
+  async existePorNomeEDataNascimento(nome, dataNascimento, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    const [rows] = await conexao.execute(
+      'SELECT 1 FROM alunos WHERE account_id = ? AND nome = ? AND data_nascimento = ? LIMIT 1',
+      [accountId, nome, dataNascimento]
+    );
+
+    return rows.length > 0;
+  }
+
+  async existePorNomeEDataNascimentoIgnorandoId(nome, dataNascimento, accountId, id) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    const [rows] = await conexao.execute(
+      'SELECT 1 FROM alunos WHERE account_id = ? AND nome = ? AND data_nascimento = ? AND id <> ? LIMIT 1',
+      [accountId, nome, dataNascimento, id]
+    );
+
+    return rows.length > 0;
+  }
+
+  async existePorNomeETelefone(nome, telefone, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    const [rows] = await conexao.execute(
+      'SELECT 1 FROM alunos WHERE account_id = ? AND nome = ? AND telefone = ? LIMIT 1',
+      [accountId, nome, telefone]
+    );
+
+    return rows.length > 0;
+  }
+
+  async existePorNomeETelefoneIgnorandoId(nome, telefone, accountId, id) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    const [rows] = await conexao.execute(
+      'SELECT 1 FROM alunos WHERE account_id = ? AND nome = ? AND telefone = ? AND id <> ? LIMIT 1',
+      [accountId, nome, telefone, id]
+    );
+
+    return rows.length > 0;
+  }
 }
 
 module.exports = new AlunoRepository();

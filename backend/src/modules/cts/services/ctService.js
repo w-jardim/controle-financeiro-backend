@@ -72,15 +72,22 @@ class CtService {
       throw new AppError('Já existe um CT com este nome', 409);
     }
 
-    const resultado = await ctRepository.criar({
-      accountId,
-      nome
-    });
+    try {
+      const resultado = await ctRepository.criar({
+        accountId,
+        nome
+      });
 
-    return {
-      mensagem: 'CT criado com sucesso',
-      id: resultado.id
-    };
+      return {
+        mensagem: 'CT criado com sucesso',
+        id: resultado.id
+      };
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        throw new AppError('Já existe um CT com este nome', 409);
+      }
+      throw error;
+    }
   }
 
   async atualizar(id, dados, accountId) {
@@ -119,18 +126,25 @@ class CtService {
     const ativo =
       dados?.ativo !== undefined ? Boolean(dados.ativo) : Boolean(ctExistente.ativo);
 
-    const resultado = await ctRepository.atualizar(idNumero, accountId, {
-      nome,
-      ativo
-    });
+    try {
+      const resultado = await ctRepository.atualizar(idNumero, accountId, {
+        nome,
+        ativo
+      });
 
-    if (!resultado.afetadas) {
-      throw new AppError('Não foi possível atualizar o CT', 400);
+      if (!resultado.afetadas) {
+        throw new AppError('Não foi possível atualizar o CT', 400);
+      }
+
+      return {
+        mensagem: 'CT atualizado com sucesso'
+      };
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        throw new AppError('Já existe um CT com este nome', 409);
+      }
+      throw error;
     }
-
-    return {
-      mensagem: 'CT atualizado com sucesso'
-    };
   }
 
   async desativar(id, accountId) {

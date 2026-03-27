@@ -402,6 +402,33 @@ done
 
 ---
 
+## 🔁 Atualização do Plano — Estado atual (2026-03-27)
+
+Status das ações propostas e trabalho realizado no repositório (resumo):
+
+- ✅ Remoção de arquivo obsoleto: `backend/docker-compose.test.yml` (arquivo vazio removido).
+- ✅ Fixtures organizadas: `AUTH_CADASTRO_CT_OWNER.json` e `AUTH_CADASTRO_PROFISSIONAL.json` movidas para `backend/tests/fixtures/` e documentação atualizada.
+- ✅ Coleção Postman arquivada em `docs/postman/postman_collection.json`; referência em `backend/.postman/resources.yaml` atualizada.
+- ✅ Documentos antigos e backups arquivados em `docs/archive/` (preservados para revisão).
+- ✅ Exemplo de ambiente de teste atualizado: `backend/.env.test.example` inclui `DB_PORT`, `JWT_SECRET`, `JWT_EXPIRES_IN` e `NODE_ENV=test`.
+- ✅ `errorHandler` ajustado para suprimir logs em `NODE_ENV=test` para evitar poluição da saída de testes.
+
+Itens pendentes / ações recomendadas:
+
+- [ ] Adicionar índices únicos faltantes no `mysql-init/01-init.sql` relacionados a `alunos` (ex.: `uq_alunos_nome_data`, `uq_alunos_nome_telefone`) — alteração de schema, testar em ambiente homolog.
+- [ ] Validar execução completa da suíte de integração contra DB de teste: `npm run test:with-db` e corrigir regressões.
+- [ ] Confirmar `backend/.env.test` está no `.gitignore` e documentar fluxo de testes no README.
+- [ ] Revisão manual recomendada: `package.json` na raiz e demais MDs de auditoria antes de remoção/arquivamento adicional.
+- [ ] Planejar/logging estruturado (winston/pino) e rate limiting conforme Fase 1 (prioridade média).
+
+Observações:
+
+- Todas as mudanças aplicadas nesta etapa foram preservadas de forma reversível (git) e sem remover código funcional.
+- Arquivos foram arquivados em `docs/archive/` para consulta histórica.
+
+
+---
+
 ### 5️⃣ Adicionar Helmet (Security Headers)
 
 **package.json**:

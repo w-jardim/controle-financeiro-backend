@@ -65,14 +65,13 @@
 ```json
 {
   "mensagem": "Login realizado com sucesso",
-  "token": "jwt-token-string",
-  "usuario": { ... },
-  "account": { ... }
+  "token": "jwt-token-string"
 }
 ```
 - **Observações**: 
-  - Retorna token JWT para uso nas rotas protegidas
-  - Token contém: { sub: userId, accountId, role }
+  - A implementação atual devolve `mensagem` e `token` (JWT). Campos adicionais como `usuario` e `account` não são garantidos pela service e podem ser `undefined` na resposta atual.
+  - Token contém: `{ sub: userId, accountId, role }` e é gerado por `src/shared/utils/jwt.js` usando `process.env.JWT_SECRET`.
+  - Para os testes automatizados, `backend/.env.test` (ou `backend/.env.test.example`) precisa definir `JWT_SECRET` — o repositório inclui uma versão de exemplo atualizada.
 
 ---
 
@@ -462,6 +461,31 @@ transacaoId: (preenchido após criar transação)
 - Rotas protegidas: `/cts/*`, `/transacoes/*`, `/alunos/*`
 - Token JWT deve ser enviado no header: `Authorization: Bearer {token}`
 - Token contém accountId (multi-tenant automático)
+
+### Atualizações recentes (resumo - 2026-03-27)
+
+- Testes de integração e infra:
+  - `jest` + `supertest` configurados; `tests/setup/jest.setup.js` carrega `backend/.env.test` quando `NODE_ENV=test`.
+  - Arquivo `docker-compose.test.yml` canônico foi adicionado na raiz do repo para orquestrar um MySQL de teste (service `mysql_test`).
+  - `backend/package.json` contém scripts para orquestrar o DB de teste (`db:test:up`, `db:test:down`, `test:with-db`).
+
+- Ambiente de teste e JWT:
+  - `backend/.env.test.example` foi atualizado para incluir `DB_PORT`, `JWT_SECRET`, `JWT_EXPIRES_IN` e `NODE_ENV=test`.
+  - `src/shared/utils/jwt.js` usa `process.env.JWT_SECRET` para assinar/verificar tokens; se `JWT_SECRET` não estiver definido, a geração falhará.
+
+- Logging e testes:
+  - `src/shared/middlewares/errorHandler.js` foi ajustado para suprimir `console.error` quando `NODE_ENV==='test'`, evitando poluição da saída de testes.
+
+- Organização de artefatos:
+  - Fixtures de teste (`AUTH_CADASTRO_CT_OWNER.json`, `AUTH_CADASTRO_PROFISSIONAL.json`) foram movidas para `backend/tests/fixtures/`.
+  - A coleção Postman foi movida para `docs/postman/postman_collection.json` e referências internas atualizadas.
+  - Arquivos antigos/backups/planos foram arquivados em `docs/archive/` (não apagados).
+
+### Itens pendentes importantes
+
+- Índices SQL: o `mysql-init/01-init.sql` não contém alguns índices únicos esperados (ex.: `uq_alunos_nome_data`, `uq_alunos_nome_telefone`) — verificar e aplicar em ambiente de homologação antes de produção.
+- Revisão manual: `package.json` na raiz e outros MDs de auditoria para decidir arquivamento ou exclusão final.
+
 
 ### Foreign Keys
 - **Alunos** depende de CT existente (`ct_id` obrigatório)
