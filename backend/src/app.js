@@ -11,6 +11,9 @@ const { registrarRotasAlunos } = require('./modules/alunos/module');
 const { registrarRotasProfissionais } = require('./modules/profissionais/module');
 const { registrarRotasModalidades } = require('./modules/modalidades/module');
 const { registrarRotasHorarios } = require('./modules/horarios-aula/module');
+const { registrarRotasAgendamentos } = require('./modules/agendamentos/module');
+const { registrarRotasPresencas } = require('./modules/presencas/module');
+const { registrarRotasMensalidades } = require('./modules/mensalidades/module');
 /**
  * Cria e configura a aplicação Express
  * Não faz listen neste arquivo
@@ -98,6 +101,15 @@ app.use('/modalidades', authMiddleware);
 // Proteger as rotas de Horários de Aula com JWT
 app.use('/horarios-aula', authMiddleware);
 
+// Proteger as rotas de Agendamentos com JWT
+app.use('/agendamentos', authMiddleware);
+
+// Proteger as rotas de Presenças com JWT
+app.use('/presencas', authMiddleware);
+
+// Proteger as rotas de Mensalidades com JWT
+app.use('/mensalidades', authMiddleware);
+
 registrarRotasTransacoes(app);
 registrarRotasAuth(app);
 registrarRotasCts(app);
@@ -105,6 +117,9 @@ registrarRotasAlunos(app);
 registrarRotasProfissionais(app);
 registrarRotasModalidades(app);
 registrarRotasHorarios(app);
+registrarRotasAgendamentos(app);
+registrarRotasPresencas(app);
+registrarRotasMensalidades(app);
 
 // ============================================
 // 404 - Rota Não Encontrada

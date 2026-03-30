@@ -11,11 +11,15 @@ if (!process.env.DB_NAME && process.env.NODE_ENV === 'test') {
 const conexao = require('../../src/shared/database/connection');
 
 const TABELAS = [
+  // ordem: tabelas filhas primeiro para evitar violação de FK ao truncar
+  'presencas',
+  'mensalidades',
+  'agendamentos',
   'transacoes',
+  'horarios_aula',
   'alunos',
   'profissionais',
   'modalidades',
-  'horarios_aula',
   'cts',
   'account_users',
   'users',

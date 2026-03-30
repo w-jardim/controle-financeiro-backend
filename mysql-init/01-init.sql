@@ -5,6 +5,9 @@
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
+SET FOREIGN_KEY_CHECKS = 0;
+SET sql_mode = 'STRICT_ALL_TABLES';
+
 -- ============================================
 -- TABELA: ACCOUNTS
 -- ============================================
@@ -17,6 +20,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   status VARCHAR(50) NOT NULL DEFAULT 'ativo',
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- ============================================
 -- TABELA: USERS
@@ -143,7 +147,6 @@ CREATE TABLE IF NOT EXISTS alunos (
 -- ============================================
 -- TABELA: PROFISSIONAIS
 -- ============================================
-
 CREATE TABLE IF NOT EXISTS profissionais (
   id INT AUTO_INCREMENT PRIMARY KEY,
   account_id INT NOT NULL,
@@ -223,18 +226,101 @@ CREATE TABLE IF NOT EXISTS horarios_aula (
   CONSTRAINT fk_horarios_modalidade
     FOREIGN KEY (modalidade_id) REFERENCES modalidades(id)
     ON DELETE CASCADE
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: AGENDAMENTOS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS agendamentos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  aluno_id INT NOT NULL,
+  horario_aula_id INT NOT NULL,
+  data_aula DATE NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'agendado',
+  observacao TEXT DEFAULT NULL,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_agendamento_account_id (account_id),
+  INDEX idx_agendamento_aluno_id (aluno_id),
+  INDEX idx_agendamento_horario_id (horario_aula_id),
+
+  CONSTRAINT fk_agendamentos_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_agendamentos_aluno
+    FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_agendamentos_horario
+    FOREIGN KEY (horario_aula_id) REFERENCES horarios_aula(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: PRESENCAS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS presencas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  agendamento_id INT NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  observacao TEXT DEFAULT NULL,
+  registrado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_presenca_agendamento (agendamento_id),
+  INDEX idx_presencas_account_id (account_id),
+  INDEX idx_presencas_agendamento_id (agendamento_id),
+
+  CONSTRAINT fk_presencas_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_presencas_agendamento
+    FOREIGN KEY (agendamento_id) REFERENCES agendamentos(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABELA: MENSALIDADES
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS mensalidades (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_id INT NOT NULL,
+  aluno_id INT NOT NULL,
+  competencia VARCHAR(7) NOT NULL,
+  valor DECIMAL(10,2) NOT NULL,
+  vencimento DATE NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pendente',
+  data_pagamento DATE DEFAULT NULL,
+  observacao TEXT DEFAULT NULL,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uq_mensalidade_aluno_competencia (account_id, aluno_id, competencia),
+  INDEX idx_mensalidades_account_id (account_id),
+  INDEX idx_mensalidades_aluno_id (aluno_id),
+  INDEX idx_mensalidades_competencia (competencia),
+
+  CONSTRAINT fk_mensalidades_account
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_mensalidades_aluno
+    FOREIGN KEY (aluno_id) REFERENCES alunos(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
 -- DADOS INICIAIS (SEED)
 -- ============================================
 
--- Conta principal
 INSERT INTO accounts (nome, tipo, plano, status)
 VALUES ('Conta Principal', 'ct_owner', 'basic', 'ativo');
 
--- Usuário admin
--- senha ilustrativa com hash bcrypt de exemplo
 INSERT INTO users (nome, email, senha_hash, ativo)
 VALUES (
   'Admin',
@@ -243,17 +329,14 @@ VALUES (
   1
 );
 
--- Vincular usuário à conta
 INSERT INTO account_users (account_id, user_id, role, ativo)
 VALUES (1, 1, 'owner', 1);
 
--- CTs de exemplo
 INSERT INTO cts (account_id, nome, ativo) VALUES
 (1, 'CT Centro', 1),
 (1, 'CT Zona Sul', 1);
 
--- Transações de exemplo
 INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES
-(1, 1, 'receita', 'Mensalidade aluno', 150.00),;
-ALTER TABLE profissionais
-  ADD UNIQUE KEY uq_profissionais_nome_telefone (account_id, nome, telefone);
+(1, 1, 'receita', 'Mensalidade aluno', 150.00);
+
+SET FOREIGN_KEY_CHECKS = 1;
