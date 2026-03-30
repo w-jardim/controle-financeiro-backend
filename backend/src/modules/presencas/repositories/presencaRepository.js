@@ -5,11 +5,15 @@ class PresencaRepository {
   async listar({ limite, offset, accountId }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
-    const consulta = `SELECT p.* FROM presencas p WHERE p.account_id = ? ORDER BY p.registrado_em DESC LIMIT ? OFFSET ?`;
-    const params = [accountId, limite, offset];
+    const filtros = ['p.account_id = ?'];
+    const params = [accountId];
 
-    const [dados] = await conexao.query(consulta, params);
-    const [count] = await conexao.query('SELECT COUNT(*) AS total FROM presencas WHERE account_id = ?', [accountId]);
+    const where = ` WHERE ${filtros.join(' AND ')}`;
+    const consulta = `SELECT p.* FROM presencas p${where} ORDER BY p.registrado_em DESC LIMIT ? OFFSET ?`;
+    const paramsWithLimit = params.concat([limite, offset]);
+
+    const [dados] = await conexao.query(consulta, paramsWithLimit);
+    const [count] = await conexao.query(`SELECT COUNT(*) AS total FROM presencas p${where}`, params);
 
     return { dados, total: Number(count[0].total) };
   }

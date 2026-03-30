@@ -65,9 +65,19 @@ class MensalidadeService {
 
     const existe = await mensalidadeRepository.existePorAlunoCompetencia(alunoId, competencia, accountId);
     if (existe) throw new AppError('Mensalidade já cadastrada para esse aluno e competência', 409);
-
-    const resultado = await mensalidadeRepository.criar({ accountId, alunoId, competencia, valor, vencimento, status, data_pagamento: dados.data_pagamento || null, observacao });
-    return { mensagem: 'Mensalidade criada com sucesso', id: resultado.id };
+    try {
+      const resultado = await mensalidadeRepository.criar({ accountId, alunoId, competencia, valor, vencimento, status, data_pagamento: dados.data_pagamento || null, observacao });
+      return { mensagem: 'Mensalidade criada com sucesso', id: resultado.id };
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        const sqlMessage = (error && error.sqlMessage) || '';
+        if (sqlMessage.toLowerCase().includes('uq_mensalidade_aluno_competencia')) {
+          throw new AppError('Mensalidade já cadastrada para esse aluno e competência', 409);
+        }
+        throw new AppError('Registro duplicado', 409);
+      }
+      throw error;
+    }
   }
 
   async atualizar(id, dados, accountId) {
@@ -87,12 +97,21 @@ class MensalidadeService {
       const found = await mensalidadeRepository.buscarPorAlunoCompetencia(novoAlunoId, novaCompetencia, accountId);
       if (found && found.id !== idNumero) throw new AppError('Mensalidade já cadastrada para esse aluno e competência', 409);
     }
-
-    const resultado = await mensalidadeRepository.atualizar(idNumero, accountId, dados);
-    if (!resultado.afetadas) throw new AppError('Não foi possível atualizar a mensalidade', 400);
-
-    const atualizado = await mensalidadeRepository.buscarPorId(idNumero, accountId);
-    return atualizado;
+    try {
+      const resultado = await mensalidadeRepository.atualizar(idNumero, accountId, dados);
+      if (!resultado.afetadas) throw new AppError('Não foi possível atualizar a mensalidade', 400);
+      const atualizado = await mensalidadeRepository.buscarPorId(idNumero, accountId);
+      return atualizado;
+    } catch (error) {
+      if (error && (error.code === 'ER_DUP_ENTRY' || error.errno === 1062)) {
+        const sqlMessage = (error && error.sqlMessage) || '';
+        if (sqlMessage.toLowerCase().includes('uq_mensalidade_aluno_competencia')) {
+          throw new AppError('Mensalidade já cadastrada para esse aluno e competência', 409);
+        }
+        throw new AppError('Registro duplicado', 409);
+      }
+      throw error;
+    }
   }
 
   async pagar(id, dataPagamento, accountId) {

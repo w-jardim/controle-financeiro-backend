@@ -242,6 +242,7 @@ CREATE TABLE IF NOT EXISTS agendamentos (
   observacao TEXT DEFAULT NULL,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
+  UNIQUE KEY uq_agendamento_unico (account_id, aluno_id, horario_aula_id, data_aula),
   INDEX idx_agendamento_account_id (account_id),
   INDEX idx_agendamento_aluno_id (aluno_id),
   INDEX idx_agendamento_horario_id (horario_aula_id),
@@ -318,25 +319,42 @@ CREATE TABLE IF NOT EXISTS mensalidades (
 -- DADOS INICIAIS (SEED)
 -- ============================================
 
+-- Inserts idempotentes: só inserem se não existirem
 INSERT INTO accounts (nome, tipo, plano, status)
-VALUES ('Conta Principal', 'ct_owner', 'basic', 'ativo');
+SELECT 'Conta Principal', 'ct_owner', 'basic', 'ativo'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM accounts WHERE nome = 'Conta Principal' LIMIT 1);
 
 INSERT INTO users (nome, email, senha_hash, ativo)
-VALUES (
-  'Admin',
-  'admin@admin.com',
-  '$2b$10$7aX8mQ0w7J5Y9zR9Vx1k2e6mN4pQf2W8sL0gB3nD1cH5uT7rK9y1a',
-  1
+SELECT 'Admin', 'admin@admin.com', '$2b$10$7aX8mQ0w7J5Y9zR9Vx1k2e6mN4pQf2W8sL0gB3nD1cH5uT7rK9y1a', 1
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@admin.com' LIMIT 1);
+
+-- Vincular account e user apenas se ambos existirem e a vinculação não existir
+INSERT INTO account_users (account_id, user_id, role, ativo)
+SELECT a.id, u.id, 'owner', 1
+FROM (SELECT id FROM accounts WHERE nome = 'Conta Principal' LIMIT 1) a
+CROSS JOIN (SELECT id FROM users WHERE email = 'admin@admin.com' LIMIT 1) u
+WHERE NOT EXISTS (
+  SELECT 1 FROM account_users au WHERE au.account_id = a.id AND au.user_id = u.id LIMIT 1
 );
 
-INSERT INTO account_users (account_id, user_id, role, ativo)
-VALUES (1, 1, 'owner', 1);
+-- Criar CTS iniciais vinculados à conta (idempotente)
+INSERT INTO cts (account_id, nome, ativo)
+SELECT a.id, 'CT Centro', 1 FROM (SELECT id FROM accounts WHERE nome = 'Conta Principal' LIMIT 1) a
+WHERE NOT EXISTS (SELECT 1 FROM cts WHERE account_id = a.id AND nome = 'CT Centro' LIMIT 1);
 
-INSERT INTO cts (account_id, nome, ativo) VALUES
-(1, 'CT Centro', 1),
-(1, 'CT Zona Sul', 1);
+INSERT INTO cts (account_id, nome, ativo)
+SELECT a.id, 'CT Zona Sul', 1 FROM (SELECT id FROM accounts WHERE nome = 'Conta Principal' LIMIT 1) a
+WHERE NOT EXISTS (SELECT 1 FROM cts WHERE account_id = a.id AND nome = 'CT Zona Sul' LIMIT 1);
 
-INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor) VALUES
-(1, 1, 'receita', 'Mensalidade aluno', 150.00);
+-- Exemplo de transação seed (idempotente) referenciando ct
+INSERT INTO transacoes (account_id, ct_id, tipo, descricao, valor)
+SELECT a.id, c.id, 'receita', 'Mensalidade aluno', 150.00
+FROM (SELECT id FROM accounts WHERE nome = 'Conta Principal' LIMIT 1) a
+CROSS JOIN (SELECT id FROM cts WHERE nome = 'CT Centro' LIMIT 1) c
+WHERE NOT EXISTS (
+  SELECT 1 FROM transacoes t WHERE t.account_id = a.id AND t.ct_id = c.id AND t.tipo = 'receita' AND t.descricao = 'Mensalidade aluno' LIMIT 1
+);
 
 SET FOREIGN_KEY_CHECKS = 1;

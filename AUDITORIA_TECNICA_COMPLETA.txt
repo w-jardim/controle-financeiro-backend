@@ -1,0 +1,200 @@
+AUDITORIA TÉCNICA COMPLETA - BACKEND
+
+1. VISÃO GERAL DO BACKEND
+
+Resumo técnico do estado atual
+Projeto Node.js + Express modular (módulos por domínio). Padrão consistente controller → service → repository. Banco MySQL, inicialização via mysql-init/01-init.sql. Testes de integração com Jest + supertest. Conexão: src/shared/database/connection.js. Autenticação JWT (src/shared/utils/jwt.js) e middleware authMiddleware. Tratamento centralizado de erros em src/shared/middlewares/errorHandler.js.
+
+Nível de maturidade
+Médio–alto: arquitetura e padrões consolidados; integração e isolamento por account testados. Ainda faltam blindagens operacionais e correções de integridade concorrencial.
+
+Pontos fortes
+- Arquitetura modular e consistente (módulos separados).
+- Fluxo controller → service → repository padronizado.
+- Middleware de autenticação (authMiddleware) e erro (errorHandler) implementados.
+- Uso de asyncHandler para controllers async.
+- Queries parametrizadas via mysql2/promise.
+- Dockerized test environment com healthcheck e script test:with-db.
+- Helpers de teste e boa cobertura de integração em vários módulos.
+
+Pontos fracos
+- Contrato DECIMAL não padronizado (MySQL → string).
+- Possíveis race conditions em verificação+insert (duplicidade).
+- Seeds assumem IDs fixos.
+- Algumas listagens calculam total sem aplicar filtros.
+- Falta documentação OpenAPI/Swagger e logger estruturado.
+
+
+2. O QUE JÁ ESTÁ BOM
+- Modularidade por domínio: facilita manutenção.
+- Padrão controller→service→repository aplicado de forma coerente.
+- Tratamento centralizado de erros: AppError + errorHandler.
+- Autenticação via middleware que injeta req.user (accountId).
+- Testes de integração com helpers (criar conta, criar CT, limpar banco).
+- Docker test environment com healthcheck e scripts npm.
+
+
+3. PROBLEMAS ENCONTRADOS (detalhados)
+
+1) Contagem de itens em listagens não aplica filtros
+- Descrição: COUNT separado sem filtros (ex.: mensalidades). 
+- Impacto: paginação/total incorretos.
+- Prioridade: Alta
+- Onde: backend/src/modules/mensalidades/repositories/mensalidadeRepository.js (listar)
+- Recomendação: construir COUNT com os mesmos filtros; retornar total consistente.
+
+2) Race condition entre verificação e INSERT → duplicidade
+- Descrição: verifica existe -> insere; pode ocorrer condição de corrida.
+- Impacto: erros 409/500 sob concorrência.
+- Prioridade: Alta
+- Onde: mensalidadeService.criar + repository.existePorAlunoCompetencia
+- Recomendação: tentar INSERT e capturar ER_DUP_ENTRY -> 409, ou usar transação/lock.
+
+3) Seeds assumem IDs fixos
+- Descrição: mysql-init/01-init.sql usa account_id = 1, ct_id = 1
+- Impacto: falhas em ambientes com dados anteriores; fragiliza deploy.
+- Prioridade: Alta
+- Recomendação: tornar seeds idempotentes (script JS) e não assumir IDs.
+
+4) Uso de SET FOREIGN_KEY_CHECKS = 0 sem validação pós-init
+- Descrição: desabilita FK para init; pode mascarar problemas.
+- Impacto: integridade pode ficar comprometida.
+- Prioridade: Média
+- Recomendação: usar apenas durante init + validação pós-init; preferir ordem correta.
+
+5) Mensagens de erro de constraint incompletas
+- Descrição: errorHandler mapeia algumas constraints, mas não todas (ex.: mensalidades).
+- Impacto: mensagens genéricas atrapalham UX/debug.
+- Prioridade: Média
+- Recomendação: mapear constraints críticas (uq_mensalidade_aluno_competencia).
+
+6) DECIMAL retornado como string (contrato ambíguo)
+- Descrição: mysql2 retorna DECIMAL como string; API retorna string sem especificar.
+- Impacto: consumidores podem ter bugs numéricos.
+- Prioridade: Média
+- Recomendação: definir contrato (converter para number no backend ou documentar string).
+
+7) Falta de validação centralizada (payloads)
+- Descrição: validações espalhadas nas services.
+- Impacto: duplicação, inconsistência.
+- Prioridade: Média
+- Recomendação: adotar Joi/Zod/express-validator como camada de validação.
+
+8) Operações multi-step sem transação
+- Descrição: fluxos que exigem atomicidade (ex.: agendamento + vagas) não usam transações.
+- Impacto: inconsistência em falhas parciais.
+- Prioridade: Alta
+- Recomendação: usar conn.beginTransaction / commit / rollback.
+
+9) Docker/test scripts frágil por container_name e volume
+- Descrição: docker-compose.test.yml define container_name e volume persistente.
+- Impacto: conflitos em CI / dados entre runs.
+- Prioridade: Média
+- Recomendação: remover container_name, usar volumes temporários e teardown entre runs.
+
+10) Observabilidade / logging insuficientes
+- Descrição: console.error usado; sem logger estruturado nem request-id.
+- Impacto: depuração em produção difícil.
+- Prioridade: Média
+- Recomendação: integrar pino/winston, request-id middleware, logs estruturados.
+
+11) Ausência de OpenAPI e documentação de contrato
+- Descrição: falta spec OpenAPI/Swagger.
+- Impacto: dificulta integração frontend/terceiros.
+- Prioridade: Alta
+- Recomendação: gerar spec OpenAPI e hospedar UI (Swagger UI).
+
+12) Segurança JWT / segredos sem política
+- Descrição: JWT sem política de rotação/refresh/revocation clara.
+- Impacto: risco de tokens comprometidos.
+- Prioridade: Alta
+- Recomendação: definir JWT_EXPIRES_IN curto, implementar refresh/revocation e usar secret manager.
+
+
+4. RISCOS DE NEGÓCIO E TÉCNICOS
+- Vazamento de dados entre contas se accountId não for aplicado em todas queries.
+- Dados inconsistentes por operações multi-step sem transação.
+- Falhas de deploy por seeds/DDL mal definidas.
+- Testes CI frágeis por container_name/volumes.
+- Consumidores quebrando por contrato DECIMAL não documentado.
+
+
+5. GAPS PARA CONSIDERAR O BACKEND 100%
+- OpenAPI/Swagger disponível.
+- Tratamento atômico de criações sensíveis.
+- Transações para operações multi-step.
+- Seeds idempotentes.
+- Cobertura unitária em services + edge cases.
+- Logger estruturado, request-id, métricas.
+- Política de segredos e JWT documentada.
+
+
+6. PLANO DE AÇÃO PRIORIZADO
+
+Fase 1 — Correções críticas (0–2 semanas)
+- Corrigir COUNT com filtros nas listagens (mensalidades etc.).
+- Implementar criação atômica (INSERT + capturar ER_DUP_ENTRY) para entidades únicas.
+- Converter seeds SQL em script idempotente.
+- Adicionar transações em operações multi-step (agendamentos/vagas).
+- Mapear constraints críticas no errorHandler.
+
+Fase 2 — Correções estruturais (2–6 semanas)
+- Definir contrato DECIMAL e padronizar (ou documentar). 
+- Adotar camadas de validação (Joi/Zod).
+- Implementar logger estruturado e request-id.
+- Ajustar docker-compose.test.yml e CI para runs limpos.
+
+Fase 3 — Blindagem final (6–12 semanas)
+- Publicar OpenAPI e testes de contrato.
+- Implementar políticas JWT (refresh/revocation).
+- Revisar índices e performance com EXPLAIN.
+- Implementar monitoramento e alertas.
+
+Fase 4 — Encerramento técnico
+- Elevar cobertura de testes unitários e integração.
+- Playbook de operação (backup/restore, rollback procedures).
+
+
+7. CHECKLIST FINAL (marcável)
+- [ ] OpenAPI publicado.
+- [ ] lista.total correta com filtros.
+- [ ] Criação atômica de recursos únicos.
+- [ ] Seeds idempotentes.
+- [ ] Transações aplicadas onde necessário.
+- [ ] Política de JWT/segredos documentada.
+- [ ] Logger estruturado + request-id implementado.
+- [ ] .env.example e README com setup.
+- [ ] CI executa test:with-db em ambiente limpo.
+- [ ] Cobertura de testes adequada.
+- [ ] Monitoramento/alerts configurados.
+
+
+8. ITENS ESPECÍFICOS, TRECHOS E ARQUIVOS CITADOS
+- src/shared/middlewares/errorHandler.js — mapear constraints, melhorar logs.
+- src/shared/middlewares/authMiddleware.js — bom; confirmar claims de token.
+- src/shared/database/connection.js — pool ok; para transações usar getConnection().
+- mysql-init/01-init.sql — seeds assumem IDs; revisar uso de FOREIGN_KEY_CHECKS.
+- docker-compose.test.yml — remover container_name, ajustar volumes.
+- backend/src/modules/mensalidades/repositories/mensalidadeRepository.js — ajustar listar/count.
+- backend/src/modules/mensalidades/services/mensalidadeService.js — revisar concorrência.
+- tests/helpers/db.js — truncates manuais; considerar abordagem dinâmica.
+
+9. FALTAM DADOS/CONTEXTO PARA AUDITORIA COMPLETA
+- Config pipeline CI (CI config não fornecido).
+- Estratégia de secrets/secret manager.
+- Volume esperado de dados (para dimensionar índices).
+- Logs/monitoring já existentes (se houver).
+
+
+10. PRÓXIMOS PASSOS PRÁTICOS
+- Posso gerar PRs/patches para Fase 1 com diffs e testes. 
+- Posso criar OpenAPI inicial a partir dos controllers.
+- Posso aplicar correções rápidas (COUNT com filtros, captura ER_DUP_ENTRY, mapeamento de constraints) se autorizar alterações.
+
+
+CONCLUSÃO
+Base sólida e madura em arquitetura modular e testes de integração. Para considerar o backend "100% pronto" é imprescindível fechar gaps críticos: concorrência (duplicidade), transações em fluxos multi-step, seeds idempotentes, documentação OpenAPI e políticas de segurança JWT. Após corrigir as prioridades da Fase 1, o sistema estará muito mais confiável para avançar ao frontend.
+
+---
+
+Se desejar, gero agora os patches/PRs para a Fase 1 (cada PR com mudanças e testes).

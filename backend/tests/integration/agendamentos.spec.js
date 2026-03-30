@@ -267,4 +267,67 @@ describe('Agendamentos Integration Tests', () => {
 
     expect(res.status).toBe(404);
   });
+
+  it('limite de vagas é respeitado e operação é atômica (transação)', async () => {
+    const { token } = await criarContaELogar();
+    const ctId = await criarCt(token);
+
+    const aluno1 = await request(app)
+      .post('/alunos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Aluno V1', ct_id: ctId });
+
+    const aluno2 = await request(app)
+      .post('/alunos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Aluno V2', ct_id: ctId });
+
+    const prof = await request(app)
+      .post('/profissionais')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Prof V' });
+
+    const mod = await request(app)
+      .post('/modalidades')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Mod V' });
+
+    const horario = await request(app)
+      .post('/horarios-aula')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        ct_id: ctId,
+        profissional_id: prof.body.id,
+        modalidade_id: mod.body.id,
+        dia_semana: 6,
+        hora_inicio: '09:00:00',
+        hora_fim: '10:00:00',
+        limite_vagas: 1
+      });
+
+    // cria primeiro agendamento - deve passar
+    const first = await request(app)
+      .post('/agendamentos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ aluno_id: aluno1.body.id, horario_aula_id: horario.body.id, data_aula: '2026-05-01' });
+
+    expect(first.status).toBe(201);
+
+    // tentar criar outro deve retornar 409 e não inserir
+    const second = await request(app)
+      .post('/agendamentos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ aluno_id: aluno2.body.id, horario_aula_id: horario.body.id, data_aula: '2026-05-01' });
+
+    expect(second.status).toBe(409);
+
+    // confirmar que existe apenas 1 agendamento para esse horário/data
+    const list = await request(app)
+      .get('/agendamentos')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(list.status).toBe(200);
+    const matched = list.body.dados.filter(a => a.horario_aula_id === horario.body.id && String(a.data_aula).substring(0, 10) === '2026-05-01');
+    expect(matched.length).toBe(1);
+  });
 });

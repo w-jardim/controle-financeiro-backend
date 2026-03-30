@@ -5,15 +5,15 @@ class ProfissionalRepository {
   async listar({ limite, offset, accountId }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
-    const consulta =
-      'SELECT * FROM profissionais WHERE account_id = ? ORDER BY id ASC LIMIT ? OFFSET ?';
-    const params = [accountId, limite, offset];
+    const filtros = ['account_id = ?'];
+    const params = [accountId];
 
-    const [dados] = await conexao.query(consulta, params);
-    const [count] = await conexao.query(
-      'SELECT COUNT(*) AS total FROM profissionais WHERE account_id = ?',
-      [accountId]
-    );
+    const where = ` WHERE ${filtros.join(' AND ')}`;
+    const consulta = `SELECT * FROM profissionais${where} ORDER BY id ASC LIMIT ? OFFSET ?`;
+    const paramsWithLimit = params.concat([limite, offset]);
+
+    const [dados] = await conexao.query(consulta, paramsWithLimit);
+    const [count] = await conexao.query(`SELECT COUNT(*) AS total FROM profissionais${where}`, params);
 
     return {
       dados,

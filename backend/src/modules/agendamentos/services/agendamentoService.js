@@ -2,6 +2,7 @@ const agendamentoRepository = require('../repositories/agendamentoRepository');
 const alunoRepository = require('../../alunos/repositories/alunoRepository');
 const horarioRepository = require('../../horarios-aula/repositories/horarioAulaRepository');
 const AppError = require('../../../shared/errors/AppError');
+const conexao = require('../../../shared/database/connection');
 
 const STATUS_VALIDOS = ['agendado', 'cancelado', 'compareceu', 'faltou'];
 
@@ -57,18 +58,29 @@ class AgendamentoService {
     const horario = await horarioRepository.buscarPorId(horarioId, accountId);
     if (!horario) throw new AppError('Horário não encontrado ou não pertence à conta', 404);
 
-    // impedir duplicidade do mesmo aluno no mesmo horário/data
-    const existe = await agendamentoRepository.existeDuplicidadeAlunoHorario(alunoId, horarioId, dataAula, accountId);
-    if (existe) throw new AppError('Aluno já agendado para esse horário e data', 409);
-
-    // checar limite de vagas se definido
+    // Quando existe limite de vagas fazemos fluxo transacional para evitar TOCTOU
     if (horario.limite_vagas !== null && horario.limite_vagas !== undefined) {
-      const total = await agendamentoRepository.contarPorHorarioData(horarioId, dataAula, accountId);
-      if (horario.limite_vagas > 0 && total >= horario.limite_vagas) {
-        throw new AppError('Limite de vagas atingido para esse horário', 409);
+      const conn = await conexao.getConnection();
+      try {
+        await conn.beginTransaction();
+
+        const total = await agendamentoRepository.contarPorHorarioData(horarioId, dataAula, accountId, conn);
+        if (horario.limite_vagas > 0 && total >= horario.limite_vagas) {
+          throw new AppError('Limite de vagas atingido para esse horário', 409);
+        }
+
+        const resultado = await agendamentoRepository.criar({ accountId, alunoId, horarioAulaId: horarioId, dataAula, status, observacao }, conn);
+        await conn.commit();
+        return { mensagem: 'Agendamento criado com sucesso', id: resultado.id };
+      } catch (err) {
+        try { await conn.rollback(); } catch (_) {}
+        throw err;
+      } finally {
+        conn.release();
       }
     }
 
+    // Path sem limite de vagas — INSERT direto (UNIQUE protege contra duplicidade)
     const resultado = await agendamentoRepository.criar({ accountId, alunoId, horarioAulaId: horarioId, dataAula, status, observacao });
     return { mensagem: 'Agendamento criado com sucesso', id: resultado.id };
   }

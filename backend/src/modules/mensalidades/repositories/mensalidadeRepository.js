@@ -4,21 +4,21 @@ const AppError = require('../../../shared/errors/AppError');
 class MensalidadeRepository {
   async listar({ limite, offset, accountId, filters }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
-
-    let consulta = 'SELECT * FROM mensalidades WHERE account_id = ?';
+    const filtros = ['account_id = ?'];
     const params = [accountId];
 
     if (filters) {
-      if (filters.status) { consulta += ' AND status = ?'; params.push(filters.status); }
-      if (filters.aluno_id) { consulta += ' AND aluno_id = ?'; params.push(filters.aluno_id); }
-      if (filters.competencia) { consulta += ' AND competencia = ?'; params.push(filters.competencia); }
+      if (filters.status) { filtros.push('status = ?'); params.push(filters.status); }
+      if (filters.aluno_id) { filtros.push('aluno_id = ?'); params.push(filters.aluno_id); }
+      if (filters.competencia) { filtros.push('competencia = ?'); params.push(filters.competencia); }
     }
 
-    consulta += ' ORDER BY vencimento DESC LIMIT ? OFFSET ?';
-    params.push(limite, offset);
+    const where = ` WHERE ${filtros.join(' AND ')}`;
+    const consulta = `SELECT * FROM mensalidades${where} ORDER BY vencimento DESC LIMIT ? OFFSET ?`;
+    const paramsWithLimit = params.concat([limite, offset]);
 
-    const [dados] = await conexao.query(consulta, params);
-    const [countRows] = await conexao.query('SELECT COUNT(*) AS total FROM mensalidades WHERE account_id = ?', [accountId]);
+    const [dados] = await conexao.query(consulta, paramsWithLimit);
+    const [countRows] = await conexao.query(`SELECT COUNT(*) AS total FROM mensalidades${where}`, params);
 
     return { dados, total: Number(countRows[0].total) };
   }

@@ -4,12 +4,15 @@ const AppError = require('../../../shared/errors/AppError');
 class AgendamentoRepository {
   async listar({ limite, offset, accountId }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
+    const filtros = ['a.account_id = ?'];
+    const params = [accountId];
 
-    const consulta = `SELECT a.* FROM agendamentos a WHERE a.account_id = ? ORDER BY a.data_aula DESC LIMIT ? OFFSET ?`;
-    const params = [accountId, limite, offset];
+    const where = ` WHERE ${filtros.join(' AND ')}`;
+    const consulta = `SELECT a.* FROM agendamentos a${where} ORDER BY a.data_aula DESC LIMIT ? OFFSET ?`;
+    const paramsWithLimit = params.concat([limite, offset]);
 
-    const [dados] = await conexao.query(consulta, params);
-    const [count] = await conexao.query('SELECT COUNT(*) AS total FROM agendamentos WHERE account_id = ?', [accountId]);
+    const [dados] = await conexao.query(consulta, paramsWithLimit);
+    const [count] = await conexao.query(`SELECT COUNT(*) AS total FROM agendamentos a${where}`, params);
 
     return { dados, total: Number(count[0].total) };
   }
@@ -20,32 +23,36 @@ class AgendamentoRepository {
     return linhas[0] || null;
   }
 
-  async existeDuplicidadeAlunoHorario(alunoId, horarioAulaId, dataAula, accountId) {
+  async existeDuplicidadeAlunoHorario(alunoId, horarioAulaId, dataAula, accountId, conn = null) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
-    const [linhas] = await conexao.query(
-      'SELECT id FROM agendamentos WHERE account_id = ? AND aluno_id = ? AND horario_aula_id = ? AND data_aula = ? LIMIT 1',
-      [accountId, alunoId, horarioAulaId, dataAula]
-    );
+    const sql = 'SELECT id FROM agendamentos WHERE account_id = ? AND aluno_id = ? AND horario_aula_id = ? AND data_aula = ? LIMIT 1';
+    const params = [accountId, alunoId, horarioAulaId, dataAula];
+    const [linhas] = conn ? await conn.query(sql, params) : await conexao.query(sql, params);
     return linhas.length > 0;
   }
 
-  async contarPorHorarioData(horarioAulaId, dataAula, accountId) {
-    const [linhas] = await conexao.query(
-      'SELECT COUNT(*) AS total FROM agendamentos WHERE account_id = ? AND horario_aula_id = ? AND data_aula = ? AND status <> ?',
-      [accountId, horarioAulaId, dataAula, 'cancelado']
-    );
+  async contarPorHorarioData(horarioAulaId, dataAula, accountId, conn = null) {
+    const sql = 'SELECT COUNT(*) AS total FROM agendamentos WHERE account_id = ? AND horario_aula_id = ? AND data_aula = ? AND status <> ?';
+    const params = [accountId, horarioAulaId, dataAula, 'cancelado'];
+    const [linhas] = conn ? await conn.query(sql, params) : await conexao.query(sql, params);
     return Number(linhas[0].total);
   }
 
-  async criar({ accountId, alunoId, horarioAulaId, dataAula, status, observacao }) {
+  async criar({ accountId, alunoId, horarioAulaId, dataAula, status, observacao }, conn = null) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
-    const [resultado] = await conexao.query(
-      'INSERT INTO agendamentos (account_id, aluno_id, horario_aula_id, data_aula, status, observacao, criado_em) VALUES (?, ?, ?, ?, ?, ?, NOW())',
-      [accountId, alunoId, horarioAulaId, dataAula, status, observacao]
-    );
+    const sql = 'INSERT INTO agendamentos (account_id, aluno_id, horario_aula_id, data_aula, status, observacao, criado_em) VALUES (?, ?, ?, ?, ?, ?, NOW())';
+    const params = [accountId, alunoId, horarioAulaId, dataAula, status, observacao];
 
-    return { id: resultado.insertId };
+    try {
+      const [resultado] = conn ? await conn.query(sql, params) : await conexao.query(sql, params);
+      return { id: resultado.insertId };
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+        throw new AppError('Aluno já agendado para esse horário e data', 409);
+      }
+      throw error;
+    }
   }
 
   async atualizar(id, accountId, dados) {

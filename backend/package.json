@@ -10,7 +10,7 @@
     "test:ci": "cross-env NODE_ENV=test jest --runInBand --coverage",
     "db:test:up": "docker compose -f ../docker-compose.test.yml up -d",
     "db:test:down": "docker compose -f ../docker-compose.test.yml down -v",
-    "test:with-db": "npm run db:test:up && powershell -Command \"while ((docker inspect -f '{{.State.Health.Status}}' controlador_financeiro_mysql_test) -ne 'healthy') { Start-Sleep -Seconds 1 }\" && npm test && npm run db:test:down"
+    "test:with-db": "npm run db:test:up && powershell -Command \"$id = docker compose -f ../docker-compose.test.yml ps -q mysql_test; while ((docker inspect -f '{{.State.Health.Status}}' $id) -ne 'healthy') { Start-Sleep -Seconds 1 }\" && npm test && npm run db:test:down"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -114,6 +114,7 @@ describe('Mensalidades Integration Tests', () => {
 
     expect(listAll.status).toBe(200);
     expect(listAll.body.dados.length).toBeGreaterThanOrEqual(2);
+    expect(listAll.body.total).toBeGreaterThanOrEqual(listAll.body.dados.length);
 
     const filterByAluno = await request(app)
       .get(`/mensalidades?aluno_id=${aluno1.body.id}`)
@@ -121,6 +122,7 @@ describe('Mensalidades Integration Tests', () => {
 
     expect(filterByAluno.status).toBe(200);
     expect(filterByAluno.body.dados.every(m => m.aluno_id === aluno1.body.id)).toBe(true);
+    expect(filterByAluno.body.total).toBe(filterByAluno.body.dados.length);
 
     const filterByCompetencia = await request(app)
       .get('/mensalidades?competencia=2026-07')
@@ -128,6 +130,7 @@ describe('Mensalidades Integration Tests', () => {
 
     expect(filterByCompetencia.status).toBe(200);
     expect(filterByCompetencia.body.dados.every(m => m.competencia === '2026-07')).toBe(true);
+    expect(filterByCompetencia.body.total).toBe(filterByCompetencia.body.dados.length);
   });
 
   it('busca por id e atualização', async () => {
@@ -249,174 +252,3 @@ describe('Mensalidades Integration Tests', () => {
   });
 });
 
-
-describe('Mensalidades Integration Tests', () => {
-  beforeEach(async () => {
-    await limparBanco();
-  });
-
-  it('acesso negado sem token', async () => {
-    const res = await request(app).get('/mensalidades');
-    expect(res.status).toBe(401);
-  });
-
-  it('criação com sucesso', async () => {
-    const { token } = await criarContaELogar();
-    const ctId = await criarCt(token);
-
-    const aluno = await request(app)
-      .post('/alunos')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ nome: 'Aluno M', ct_id: ctId });
-
-    const payload = {
-      aluno_id: aluno.body.id,
-      competencia: '2026-04',
-      valor: 150.00,
-      vencimento: '2026-04-10'
-    };
-
-    const res = await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${token}`)
-      .send(payload);
-
-    expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
-  });
-
-  it('validação de campos obrigatórios', async () => {
-    const { token } = await criarContaELogar();
-
-    const res = await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${token}`)
-      .send({});
-
-    expect(res.status).toBe(400);
-  });
-
-  it('impedir duplicidade por aluno+competencia', async () => {
-    const { token } = await criarContaELogar();
-    const ctId = await criarCt(token);
-
-    const aluno = await request(app)
-      .post('/alunos')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ nome: 'Aluno DupM', ct_id: ctId });
-
-    const payload = { aluno_id: aluno.body.id, competencia: '2026-05', valor: 100, vencimento: '2026-05-10' };
-
-    const first = await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${token}`)
-      .send(payload);
-
-    expect(first.status).toBe(201);
-
-    const second = await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${token}`)
-      .send(payload);
-
-    expect(second.status).toBe(409);
-  });
-
-  it('listagem, busca por id, marcar como paga e cancelar', async () => {
-    const { token } = await criarContaELogar();
-    const ctId = await criarCt(token);
-
-    const aluno = await request(app)
-      .post('/alunos')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ nome: 'Aluno Ops', ct_id: ctId });
-
-    const create = await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-06', valor: 120, vencimento: '2026-06-10' });
-
-    expect(create.status).toBe(201);
-
-    const id = create.body.id;
-
-    const list = await request(app)
-      .get('/mensalidades')
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(list.status).toBe(200);
-
-    const get = await request(app)
-      .get(`/mensalidades/${id}`)
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(get.status).toBe(200);
-
-    const pay = await request(app)
-      .patch(`/mensalidades/${id}/pagar`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({ data_pagamento: '2026-06-11' });
-
-    expect(pay.status).toBe(200);
-
-    // criar outra mensalidade pendente e cancelar essa (não tentar cancelar a já paga)
-    const create2 = await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-07', valor: 120, vencimento: '2026-07-10' });
-
-    expect(create2.status).toBe(201);
-
-    const id2 = create2.body.id;
-
-    const cancel = await request(app)
-      .patch(`/mensalidades/${id2}/cancelar`)
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(cancel.status).toBe(200);
-  });
-
-  it('filtros e isolamento por account', async () => {
-    const a = await criarContaELogar({ email: `a${Date.now()}@example.com`, nomeAccount: 'Conta A' });
-    const b = await criarContaELogar({ email: `b${Date.now()}@example.com`, nomeAccount: 'Conta B' });
-
-    const ctA = await criarCt(a.token);
-    const ctB = await criarCt(b.token);
-
-    const alunoA = await request(app)
-      .post('/alunos')
-      .set('Authorization', `Bearer ${a.token}`)
-      .send({ nome: 'Aluno A M', ct_id: ctA });
-
-    const alunoB = await request(app)
-      .post('/alunos')
-      .set('Authorization', `Bearer ${b.token}`)
-      .send({ nome: 'Aluno B M', ct_id: ctB });
-
-    // criar mensalidade em A
-    await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${a.token}`)
-      .send({ aluno_id: alunoA.body.id, competencia: '2026-07', valor: 110, vencimento: '2026-07-10' });
-
-    // criar mensalidade em B
-    const mB = await request(app)
-      .post('/mensalidades')
-      .set('Authorization', `Bearer ${b.token}`)
-      .send({ aluno_id: alunoB.body.id, competencia: '2026-07', valor: 110, vencimento: '2026-07-10' });
-
-    // tentativa de acesso por A ao registro de B
-    const res = await request(app)
-      .get(`/mensalidades/${mB.body.id}`)
-      .set('Authorization', `Bearer ${a.token}`);
-
-    expect(res.status).toBe(404);
-
-    // filtro por competencia
-    const list = await request(app)
-      .get('/mensalidades?competencia=2026-07')
-      .set('Authorization', `Bearer ${b.token}`);
-
-    expect(list.status).toBe(200);
-  });
-});

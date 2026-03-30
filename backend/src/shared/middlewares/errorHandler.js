@@ -35,6 +35,14 @@ function errorHandler(erro, req, res, next) {
       return res.status(409).json({ status: 'erro', mensagem: 'Já existe profissional com mesmo nome e telefone' });
     }
 
+    if (sqlMessageLower.includes('uq_mensalidade_aluno_competencia')) {
+      return res.status(409).json({ status: 'erro', mensagem: 'Mensalidade já cadastrada para esse aluno e competência' });
+    }
+
+    if (sqlMessageLower.includes('uq_agendamento_unico')) {
+      return res.status(409).json({ status: 'erro', mensagem: 'Aluno já agendado para esse horário e data' });
+    }
+
     // Fallback generic message for other duplicate key errors
     return res.status(409).json({ status: 'erro', mensagem: 'Registro duplicado' });
   }
