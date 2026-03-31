@@ -1,38 +1,20 @@
 const authService = require('../services/authService');
 const asyncHandler = require('../../../shared/utils/asyncHandler');
-const AppError = require('../../../shared/errors/AppError');
+const { sucesso } = require('../../../shared/utils/response');
 
 const cadastrar = asyncHandler(async (req, res) => {
-  if (!req.body || Object.keys(req.body).length === 0) {
-    throw new AppError('Corpo da requisição vazio', 400);
-  }
-
   const resultado = await authService.cadastrarContaComOwner(req.body);
-
-  return res.status(201).json({
+  return sucesso(res, {
     mensagem: resultado.mensagem,
     accountId: resultado.accountId,
     userId: resultado.userId,
     ctId: resultado.ctId
-  });
+  }, null, 201);
 });
 
 const login = asyncHandler(async (req, res) => {
-  if (!req.body || Object.keys(req.body).length === 0) {
-    throw new AppError('Corpo da requisição vazio', 400);
-  }
-
-  const { email, senha } = req.body;
-
-  const { mensagem, token, usuario, account } =
-    await authService.login({ email, senha });
-
-  return res.status(200).json({
-    mensagem,
-    token,
-    usuario,
-    account
-  });
+  const resultado = await authService.login(req.body);
+  return sucesso(res, resultado);
 });
 
 module.exports = {

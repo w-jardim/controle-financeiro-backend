@@ -23,7 +23,15 @@ if (process.env.DEBUG_ENV === 'true') {
   console.log('  DB_USER:', process.env.DB_USER);
 }
 
+// Nota: o fechamento do pool é tratado em globalTeardown.js
+
+// Centralizar fechamento do pool após todos os testes
+const pool = require('../../src/shared/database/connection');
+
 afterAll(async () => {
-  const pool = require('../../src/shared/database/connection');
-  await pool.end();
+  try {
+    if (pool && typeof pool.end === 'function') {
+      await pool.end();
+    }
+  } catch (_) {}
 });

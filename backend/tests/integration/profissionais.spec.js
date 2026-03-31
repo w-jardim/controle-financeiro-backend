@@ -23,7 +23,7 @@ describe('Profissionais Integration Tests', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('dados');
     expect(Array.isArray(res.body.dados)).toBe(true);
-    expect(res.body.total).toBe(0);
+    expect(res.body.meta.total).toBe(0);
   });
 
   it('criar profissional com sucesso', async () => {
@@ -42,8 +42,8 @@ describe('Profissionais Integration Tests', () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body).toHaveProperty('mensagem');
+    expect(res.body.dados).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('mensagem');
   });
 
   it('validar campos obrigatórios ao criar (nome)', async () => {
@@ -90,15 +90,15 @@ describe('Profissionais Integration Tests', () => {
       .send({ nome: 'Profissional Para Buscar', telefone: '21999999999' });
 
     expect(create.status).toBe(201);
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .get(`/profissionais/${id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('id', id);
-    expect(res.body).toHaveProperty('nome', 'Profissional Para Buscar');
+    expect(res.body.dados).toHaveProperty('id', id);
+    expect(res.body.dados).toHaveProperty('nome', 'Profissional Para Buscar');
   });
 
   it('atualizar profissional', async () => {
@@ -113,7 +113,7 @@ describe('Profissionais Integration Tests', () => {
         especialidade: 'Muay Thai'
       });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .put(`/profissionais/${id}`)
@@ -124,8 +124,8 @@ describe('Profissionais Integration Tests', () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('nome', 'Profissional Atualizado');
-    expect(res.body).toHaveProperty('especialidade', 'Jiu-Jitsu');
+    expect(res.body.dados).toHaveProperty('nome', 'Profissional Atualizado');
+    expect(res.body.dados).toHaveProperty('especialidade', 'Jiu-Jitsu');
   });
 
   it('desativar profissional', async () => {
@@ -136,21 +136,21 @@ describe('Profissionais Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'Profissional Para Desativar', telefone: '21999999999' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .patch(`/profissionais/${id}/desativar`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('mensagem');
+    expect(res.body.dados).toHaveProperty('mensagem');
 
     const get = await request(app)
       .get(`/profissionais/${id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
-    expect(get.body.ativo === 0 || get.body.ativo === false).toBeTruthy();
+    expect(get.body.dados.ativo === 0 || get.body.dados.ativo === false).toBeTruthy();
   });
 
   it('ativar profissional', async () => {
@@ -161,7 +161,7 @@ describe('Profissionais Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'Profissional Para Ativar', telefone: '21999999999' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     await request(app)
       .patch(`/profissionais/${id}/desativar`)
@@ -178,7 +178,7 @@ describe('Profissionais Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
-    expect(get.body.ativo === 1 || get.body.ativo === true).toBeTruthy();
+    expect(get.body.dados.ativo === 1 || get.body.dados.ativo === true).toBeTruthy();
   });
 
   it('garantir isolamento por account para profissionais', async () => {
@@ -196,7 +196,7 @@ describe('Profissionais Integration Tests', () => {
       .set('Authorization', `Bearer ${b.token}`)
       .send({ nome: 'Profissional Conta B', telefone: '21999999999' });
 
-    const idB = createB.body.id;
+    const idB = createB.body.dados.id;
 
     const listA = await request(app)
       .get('/profissionais')
@@ -233,9 +233,9 @@ describe('Profissionais Integration Tests', () => {
       .query({ pagina: 1, limite: 10 });
 
     expect(page1.status).toBe(200);
-    expect(page1.body.pagina).toBe(1);
+    expect(page1.body.meta.pagina).toBe(1);
     expect(page1.body.dados.length).toBe(10);
-    expect(page1.body.total).toBe(15);
+    expect(page1.body.meta.total).toBe(15);
 
     const page2 = await request(app)
       .get('/profissionais')
@@ -243,7 +243,7 @@ describe('Profissionais Integration Tests', () => {
       .query({ pagina: 2, limite: 10 });
 
     expect(page2.status).toBe(200);
-    expect(page2.body.pagina).toBe(2);
+    expect(page2.body.meta.pagina).toBe(2);
     expect(page2.body.dados.length).toBe(5);
   });
 });

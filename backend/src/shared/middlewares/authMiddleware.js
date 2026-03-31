@@ -31,7 +31,14 @@ function authMiddleware(req, res, next) {
 
     return next();
   } catch (error) {
-    throw new AppError('Token inválido ou expirado', 401);
+    if (error instanceof AppError) throw error;
+    if (error.name === 'TokenExpiredError') {
+      throw new AppError('Token expirado', 401);
+    }
+    if (error.name === 'JsonWebTokenError') {
+      throw new AppError('Token inválido', 401);
+    }
+    throw new AppError('Falha na autenticação', 401);
   }
 }
 

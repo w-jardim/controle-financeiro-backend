@@ -40,8 +40,8 @@ describe('Presenças Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 1,
         hora_inicio: '10:00:00',
         hora_fim: '11:00:00'
@@ -51,15 +51,15 @@ describe('Presenças Integration Tests', () => {
     const agendamento = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, horario_aula_id: horario.body.id, data_aula: '2026-04-10' });
+      .send({ aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-04-10' });
 
     const res = await request(app)
       .post('/presencas')
       .set('Authorization', `Bearer ${token}`)
-      .send({ agendamento_id: agendamento.body.id, status: 'compareceu' });
+      .send({ agendamento_id: agendamento.body.dados.id, status: 'compareceu' });
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('id');
   });
 
   it('validação de campos obrigatórios', async () => {
@@ -96,7 +96,7 @@ describe('Presenças Integration Tests', () => {
     const alunoB = await request(app)
       .post('/alunos')
       .set('Authorization', `Bearer ${b.token}`)
-      .send({ nome: 'Aluno B', ct_id: ctB.body.id });
+      .send({ nome: 'Aluno B', ct_id: ctB.body.dados.id });
 
     const profB = await request(app)
       .post('/profissionais')
@@ -112,9 +112,9 @@ describe('Presenças Integration Tests', () => {
       .post('/horarios-aula')
       .set('Authorization', `Bearer ${b.token}`)
       .send({
-        ct_id: ctB.body.id,
-        profissional_id: profB.body.id,
-        modalidade_id: modB.body.id,
+        ct_id: ctB.body.dados.id,
+        profissional_id: profB.body.dados.id,
+        modalidade_id: modB.body.dados.id,
         dia_semana: 2,
         hora_inicio: '12:00:00',
         hora_fim: '13:00:00'
@@ -123,13 +123,13 @@ describe('Presenças Integration Tests', () => {
     const agendamentoB = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${b.token}`)
-      .send({ aluno_id: alunoB.body.id, horario_aula_id: horarioB.body.id, data_aula: '2026-04-11' });
+      .send({ aluno_id: alunoB.body.dados.id, horario_aula_id: horarioB.body.dados.id, data_aula: '2026-04-11' });
 
     // tentar registrar presença na conta A para agendamento da conta B
     const res = await request(app)
       .post('/presencas')
       .set('Authorization', `Bearer ${a.token}`)
-      .send({ agendamento_id: agendamentoB.body.id, status: 'compareceu' });
+      .send({ agendamento_id: agendamentoB.body.dados.id, status: 'compareceu' });
 
     expect(res.status).toBe(404);
   });
@@ -158,8 +158,8 @@ describe('Presenças Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 3,
         hora_inicio: '14:00:00',
         hora_fim: '15:00:00'
@@ -168,19 +168,19 @@ describe('Presenças Integration Tests', () => {
     const agendamento = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, horario_aula_id: horario.body.id, data_aula: '2026-04-12' });
+      .send({ aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-04-12' });
 
     const first = await request(app)
       .post('/presencas')
       .set('Authorization', `Bearer ${token}`)
-      .send({ agendamento_id: agendamento.body.id, status: 'compareceu' });
+      .send({ agendamento_id: agendamento.body.dados.id, status: 'compareceu' });
 
     expect(first.status).toBe(201);
 
     const second = await request(app)
       .post('/presencas')
       .set('Authorization', `Bearer ${token}`)
-      .send({ agendamento_id: agendamento.body.id, status: 'faltou' });
+      .send({ agendamento_id: agendamento.body.dados.id, status: 'faltou' });
 
     expect(second.status).toBe(409);
   });
@@ -209,8 +209,8 @@ describe('Presenças Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 4,
         hora_inicio: '16:00:00',
         hora_fim: '17:00:00'
@@ -219,15 +219,15 @@ describe('Presenças Integration Tests', () => {
     const agendamento = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, horario_aula_id: horario.body.id, data_aula: '2026-04-13' });
+      .send({ aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-04-13' });
 
     const created = await request(app)
       .post('/presencas')
       .set('Authorization', `Bearer ${token}`)
-      .send({ agendamento_id: agendamento.body.id, status: 'compareceu' });
+      .send({ agendamento_id: agendamento.body.dados.id, status: 'compareceu' });
 
     const up = await request(app)
-      .patch(`/presencas/${created.body.id}/status`)
+      .patch(`/presencas/${created.body.dados.id}/status`)
       .set('Authorization', `Bearer ${token}`)
       .send({ status: 'justificada' });
 
@@ -240,7 +240,7 @@ describe('Presenças Integration Tests', () => {
     expect(list.status).toBe(200);
 
     const get = await request(app)
-      .get(`/presencas/${created.body.id}`)
+      .get(`/presencas/${created.body.dados.id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);

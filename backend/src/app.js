@@ -3,6 +3,8 @@ const packageJson = require('../package.json');
 const corsMiddleware = require('./shared/middlewares/corsConfig');
 const errorHandler = require('./shared/middlewares/errorHandler');
 const conexao = require('./shared/database/connection');
+const requestId = require('./shared/middlewares/requestId');
+const setupSwagger = require('./shared/docs/swagger');
 const { registrarRotasTransacoes } = require('./modules/transacoes/module');
 const { registrarRotasAuth } = require('./modules/auth/module');
 const { registrarRotasCts } = require('./modules/cts/module');
@@ -29,8 +31,15 @@ const app = express();
 // Middleware Global
 // ============================================
 
+app.use(requestId);
 app.use(express.json());
 app.use(corsMiddleware);
+
+// ============================================
+// Documentação Swagger
+// ============================================
+
+setupSwagger(app);
 
 // ============================================
 // Rotas de Saúde e Status
@@ -65,6 +74,23 @@ app.get('/teste-banco', async (req, res, next) => {
   }
 });
 
+app.get('/ready', async (req, res) => {
+  try {
+    await conexao.query('SELECT 1');
+    res.status(200).json({
+      status: 'ok',
+      banco: 'conectado',
+      timestamp: new Date().toISOString()
+    });
+  } catch {
+    res.status(503).json({
+      status: 'indisponível',
+      banco: 'desconectado',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // ============================================
 // Rota Raiz (Info da API)
 // ============================================
@@ -73,10 +99,12 @@ app.get('/', (req, res) => {
   res.status(200).json({
     mensagem: 'Bem-vindo à API de Gestão de CT de Artes Marciais',
     versao: packageJson.version,
+    ambiente: process.env.NODE_ENV || 'desenvolvimento',
     endpoints: {
+      documentacao: '/docs',
       saude: '/saude',
-      transacoes: '/transacoes',
-      documentacao: 'Veja o README.md para documentação completa'
+      ready: '/ready',
+      ping: '/ping'
     }
   });
 });
@@ -127,9 +155,11 @@ registrarRotasMensalidades(app);
 
 app.use((req, res) => {
   res.status(404).json({
-    erro: 'Rota não encontrada',
-    metodo: req.method,
-    caminho: req.path
+    erro: {
+      mensagem: 'Rota não encontrada',
+      codigo: 'NOT_FOUND',
+      status: 404
+    }
   });
 });
 

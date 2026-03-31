@@ -40,16 +40,16 @@ describe('Agendamentos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+profissional_id: prof.body.dados.id,
+      modalidade_id: mod.body.dados.id,
         dia_semana: 1,
         hora_inicio: '10:00:00',
         hora_fim: '11:00:00'
       });
 
     const payload = {
-      aluno_id: aluno.body.id,
-      horario_aula_id: horario.body.id,
+      aluno_id: aluno.body.dados.id,
+      horario_aula_id: horario.body.dados.id,
       data_aula: '2026-04-01'
     };
 
@@ -59,7 +59,7 @@ describe('Agendamentos Integration Tests', () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('id');
   });
 
   it('validação de campos obrigatórios', async () => {
@@ -97,14 +97,14 @@ describe('Agendamentos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+profissional_id: prof.body.dados.id,
+      modalidade_id: mod.body.dados.id,
         dia_semana: 2,
         hora_inicio: '12:00:00',
         hora_fim: '13:00:00'
       });
 
-    const payload = { aluno_id: aluno.body.id, horario_aula_id: horario.body.id, data_aula: '2026-04-02' };
+    const payload = { aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-04-02' };
 
     const first = await request(app)
       .post('/agendamentos')
@@ -145,17 +145,17 @@ describe('Agendamentos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
-        dia_semana: 3,
-        hora_inicio: '14:00:00',
-        hora_fim: '15:00:00'
-      });
+      profissional_id: prof.body.dados.id,
+      modalidade_id: mod.body.dados.id,
+      dia_semana: 3,
+      hora_inicio: '14:00:00',
+      hora_fim: '15:00:00'
+    });
 
     const created = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, horario_aula_id: horario.body.id, data_aula: '2026-04-03' });
+      .send({ aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-04-03' });
 
     const list = await request(app)
       .get('/agendamentos')
@@ -164,7 +164,7 @@ describe('Agendamentos Integration Tests', () => {
     expect(list.status).toBe(200);
 
     const get = await request(app)
-      .get(`/agendamentos/${created.body.id}`)
+      .get(`/agendamentos/${created.body.dados.id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
@@ -194,26 +194,26 @@ describe('Agendamentos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
-        dia_semana: 4,
-        hora_inicio: '16:00:00',
-        hora_fim: '17:00:00'
-      });
+      profissional_id: prof.body.dados.id,
+      modalidade_id: mod.body.dados.id,
+      dia_semana: 4,
+      hora_inicio: '16:00:00',
+      hora_fim: '17:00:00'
+    });
 
     const created = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, horario_aula_id: horario.body.id, data_aula: '2026-04-04' });
+      .send({ aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-04-04' });
 
     const cancelar = await request(app)
-      .patch(`/agendamentos/${created.body.id}/cancelar`)
+      .patch(`/agendamentos/${created.body.dados.id}/cancelar`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(cancelar.status).toBe(200);
 
     const status = await request(app)
-      .patch(`/agendamentos/${created.body.id}/status`)
+      .patch(`/agendamentos/${created.body.dados.id}/status`)
       .set('Authorization', `Bearer ${token}`)
       .send({ status: 'compareceu' });
 
@@ -251,9 +251,9 @@ describe('Agendamentos Integration Tests', () => {
       .post('/horarios-aula')
       .set('Authorization', `Bearer ${b.token}`)
       .send({
-        ct_id: ctB.body.id,
-        profissional_id: profB.body.id,
-        modalidade_id: modB.body.id,
+        ct_id: ctB.body.dados.id,
+        profissional_id: profB.body.dados.id,
+        modalidade_id: modB.body.dados.id,
         dia_semana: 5,
         hora_inicio: '18:00:00',
         hora_fim: '19:00:00'
@@ -263,7 +263,7 @@ describe('Agendamentos Integration Tests', () => {
     const res = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${a.token}`)
-      .send({ aluno_id: alunoA.body.id, horario_aula_id: horarioB.body.id, data_aula: '2026-04-05' });
+      .send({ aluno_id: alunoA.body.dados.id, horario_aula_id: horarioB.body.dados.id, data_aula: '2026-04-05' });
 
     expect(res.status).toBe(404);
   });
@@ -297,8 +297,8 @@ describe('Agendamentos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 6,
         hora_inicio: '09:00:00',
         hora_fim: '10:00:00',
@@ -309,7 +309,7 @@ describe('Agendamentos Integration Tests', () => {
     const first = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno1.body.id, horario_aula_id: horario.body.id, data_aula: '2026-05-01' });
+      .send({ aluno_id: aluno1.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-05-01' });
 
     expect(first.status).toBe(201);
 
@@ -317,7 +317,7 @@ describe('Agendamentos Integration Tests', () => {
     const second = await request(app)
       .post('/agendamentos')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno2.body.id, horario_aula_id: horario.body.id, data_aula: '2026-05-01' });
+      .send({ aluno_id: aluno2.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-05-01' });
 
     expect(second.status).toBe(409);
 
@@ -327,7 +327,7 @@ describe('Agendamentos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(list.status).toBe(200);
-    const matched = list.body.dados.filter(a => a.horario_aula_id === horario.body.id && String(a.data_aula).substring(0, 10) === '2026-05-01');
+    const matched = list.body.dados.filter(a => a.horario_aula_id === horario.body.dados.id && String(a.data_aula).substring(0, 10) === '2026-05-01');
     expect(matched.length).toBe(1);
   });
 });

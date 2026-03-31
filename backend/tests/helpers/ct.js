@@ -11,7 +11,7 @@ async function criarCt(token, nome = `CT Helper ${Date.now()}`) {
     throw new Error(`Falha ao criar CT de teste (status ${res.status}): ${JSON.stringify(res.body)}`);
   }
 
-  return res.body.id;
+  return res.body.dados.id;
 }
 
 module.exports = {

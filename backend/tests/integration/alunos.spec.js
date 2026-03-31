@@ -22,8 +22,8 @@ describe('Alunos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBe(0);
+    expect(Array.isArray(res.body.dados)).toBe(true);
+    expect(res.body.dados.length).toBe(0);
   });
 
   it('validar campos obrigatórios ao criar (nome e ct_id)', async () => {
@@ -63,8 +63,8 @@ describe('Alunos Integration Tests', () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body).toHaveProperty('nome', payload.nome);
+    expect(res.body.dados).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('nome', payload.nome);
   });
 
   it('buscar aluno por id da própria conta', async () => {
@@ -77,14 +77,14 @@ describe('Alunos Integration Tests', () => {
       .send({ ct_id: ctId, nome: 'Aluno Para Buscar' });
 
     expect(create.status).toBe(201);
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .get(`/alunos/${id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('id', id);
+    expect(res.body.dados).toHaveProperty('id', id);
   });
 
   it('atualizar aluno', async () => {
@@ -96,7 +96,7 @@ describe('Alunos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ ct_id: ctId, nome: 'Aluno Para Atualizar', telefone: '9999' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .put(`/alunos/${id}`)
@@ -104,8 +104,8 @@ describe('Alunos Integration Tests', () => {
       .send({ nome: 'Aluno Atualizado', telefone: '8888' });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('nome', 'Aluno Atualizado');
-    expect(res.body).toHaveProperty('telefone', '8888');
+    expect(res.body.dados).toHaveProperty('nome', 'Aluno Atualizado');
+    expect(res.body.dados).toHaveProperty('telefone', '8888');
   });
 
   it('desativar aluno (exclusão lógica)', async () => {
@@ -117,14 +117,14 @@ describe('Alunos Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ ct_id: ctId, nome: 'Aluno Para Desativar' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .delete(`/alunos/${id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('ativo', 0);
+    expect(res.body.dados).toHaveProperty('ativo', 0);
   });
 
   it('garantir isolamento por account para alunos', async () => {
@@ -138,14 +138,14 @@ describe('Alunos Integration Tests', () => {
       .set('Authorization', `Bearer ${b.token}`)
       .send({ ct_id: ctB, nome: 'Aluno Conta B' });
 
-    const idB = createB.body.id;
+    const idB = createB.body.dados.id;
 
     const listA = await request(app)
       .get('/alunos')
       .set('Authorization', `Bearer ${a.token}`);
 
     expect(listA.status).toBe(200);
-    const found = (listA.body || []).find((al) => al.id === idB);
+    const found = (listA.body.dados || []).find((al) => al.id === idB);
     expect(found).toBeUndefined();
 
     const getA = await request(app)

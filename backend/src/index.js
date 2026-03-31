@@ -10,13 +10,14 @@
  */
 
 const app = require('./app');
+const logger = require('./shared/utils/logger');
+const validarEnv = require('./shared/utils/validarEnv');
 
-console.log('🚀 APLICAÇÃO INICIADA:', new Date().toLocaleString());
+// Falha explícita se faltar configuração obrigatória
+validarEnv();
 
 const PORTA = process.env.PORT || 3000;
 
 app.listen(PORTA, '0.0.0.0', () => {
-  console.log(`✓ Servidor iniciado na porta ${PORTA}`);
-  console.log(`✓ Ambiente: ${process.env.NODE_ENV || 'desenvolvimento'}`);
-  console.log(`✓ Acesse: http://localhost:${PORTA}`);
+  logger.info({ porta: PORTA, ambiente: process.env.NODE_ENV || 'desenvolvimento' }, 'Servidor iniciado');
 });

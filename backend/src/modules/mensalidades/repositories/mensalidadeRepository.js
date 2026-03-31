@@ -20,13 +20,17 @@ class MensalidadeRepository {
     const [dados] = await conexao.query(consulta, paramsWithLimit);
     const [countRows] = await conexao.query(`SELECT COUNT(*) AS total FROM mensalidades${where}`, params);
 
+    dados.forEach(d => { if (d.valor != null) d.valor = Number(d.valor); });
+
     return { dados, total: Number(countRows[0].total) };
   }
 
   async buscarPorId(id, accountId) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
     const [linhas] = await conexao.query('SELECT * FROM mensalidades WHERE id = ? AND account_id = ?', [id, accountId]);
-    return linhas[0] || null;
+    const row = linhas[0] || null;
+    if (row && row.valor != null) row.valor = Number(row.valor);
+    return row;
   }
 
   async existePorAlunoCompetencia(alunoId, competencia, accountId) {

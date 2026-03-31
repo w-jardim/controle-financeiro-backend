@@ -3,6 +3,9 @@ const roteador = express.Router();
 
 const validarTransacao = require('../middlewares/validarTransacao');
 const validarIdNumerico = require('../../../shared/middlewares/validarIdNumerico');
+const validate = require('../../../shared/middlewares/validate');
+const { idParamSchema } = require('../../../shared/validators/common');
+const { criarTransacaoSchema, atualizarTransacaoSchema } = require('../../../shared/validators/transacaoValidator');
 const {
   listarTransacoes,
   buscarTransacaoPorId,
@@ -25,11 +28,10 @@ roteador.get('/resumo', resumoTransacoes);
 // ============================================
 
 roteador.get('/', listarTransacoes);
-roteador.post('/', validarTransacao, criarTransacao);
+roteador.post('/', validate(criarTransacaoSchema), validarTransacao, criarTransacao);
 
-// ⚠️ ID NUMÉRICO (proteção contra colisão de rota)
-roteador.get('/:id', buscarTransacaoPorId);
-roteador.put('/:id', validarTransacao, atualizarTransacao);
-roteador.delete('/:id', deletarTransacao);
+roteador.get('/:id', validate(idParamSchema, 'params'), buscarTransacaoPorId);
+roteador.put('/:id', validate(idParamSchema, 'params'), validate(atualizarTransacaoSchema), validarTransacao, atualizarTransacao);
+roteador.delete('/:id', validate(idParamSchema, 'params'), deletarTransacao);
 
 module.exports = roteador;

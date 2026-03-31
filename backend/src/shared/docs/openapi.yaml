@@ -1,0 +1,1652 @@
+openapi: 3.0.3
+info:
+  title: Controlador Financeiro — API de Gestão de CT
+  description: API para gestão de Centros de Treinamento de Artes Marciais. Multi-tenant via account_id extraído do JWT.
+  version: 1.0.0
+  contact:
+    name: Suporte
+
+servers:
+  - url: http://localhost:3000
+    description: Desenvolvimento local
+
+tags:
+  - name: auth
+    description: Cadastro e login
+  - name: cts
+    description: Centros de Treinamento
+  - name: alunos
+    description: Alunos
+  - name: profissionais
+    description: Profissionais / Instrutores
+  - name: modalidades
+    description: Modalidades de treino
+  - name: horarios-aula
+    description: Horários de aula
+  - name: transacoes
+    description: Transações financeiras
+  - name: agendamentos
+    description: Agendamentos de aula
+  - name: presencas
+    description: Presenças
+  - name: mensalidades
+    description: Mensalidades
+  - name: saude
+    description: Health check
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Erro:
+      type: object
+      properties:
+        erro:
+          type: object
+          properties:
+            mensagem:
+              type: string
+              example: Recurso não encontrado
+            codigo:
+              type: string
+              example: NOT_FOUND
+            status:
+              type: integer
+              example: 404
+            requestId:
+              type: string
+              format: uuid
+              example: 550e8400-e29b-41d4-a716-446655440000
+
+    Meta:
+      type: object
+      properties:
+        pagina:
+          type: integer
+          example: 1
+        limite:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 42
+        totalPaginas:
+          type: integer
+          example: 3
+
+    # ---------- AUTH ----------
+    CadastroRequest:
+      type: object
+      required: [nomeResponsavel, email, senha, nomeAccount]
+      properties:
+        nomeResponsavel:
+          type: string
+          example: Wallace Silva
+        email:
+          type: string
+          format: email
+          example: wallace@email.com
+        senha:
+          type: string
+          minLength: 6
+          example: '123456'
+        nomeAccount:
+          type: string
+          example: Conta Wallace
+        tipoAccount:
+          type: string
+          enum: [ct_owner, profissional_autonomo]
+          example: ct_owner
+
+    CadastroResponse:
+      type: object
+      properties:
+        dados:
+          type: object
+          properties:
+            mensagem:
+              type: string
+            accountId:
+              type: integer
+            userId:
+              type: integer
+            ctId:
+              type: integer
+              nullable: true
+
+    LoginRequest:
+      type: object
+      required: [email, senha]
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        dados:
+          type: object
+          properties:
+            mensagem:
+              type: string
+            token:
+              type: string
+
+    # ---------- CT ----------
+    CtRequest:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+          example: CT Fight Academy
+        ativo:
+          type: boolean
+
+    Ct:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        nome:
+          type: string
+        ativo:
+          type: integer
+        criado_em:
+          type: string
+          format: date-time
+
+    # ---------- ALUNO ----------
+    AlunoRequest:
+      type: object
+      required: [nome, ct_id]
+      properties:
+        nome:
+          type: string
+        ct_id:
+          type: integer
+        cpf:
+          type: string
+          nullable: true
+        data_nascimento:
+          type: string
+          format: date
+          nullable: true
+        sexo:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        nome_responsavel:
+          type: string
+          nullable: true
+        telefone_responsavel:
+          type: string
+          nullable: true
+
+    Aluno:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        ct_id:
+          type: integer
+        nome:
+          type: string
+        cpf:
+          type: string
+          nullable: true
+        data_nascimento:
+          type: string
+          format: date
+          nullable: true
+        sexo:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        ativo:
+          type: integer
+
+    # ---------- PROFISSIONAL ----------
+    ProfissionalRequest:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        especialidade:
+          type: string
+          nullable: true
+
+    Profissional:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        nome:
+          type: string
+        email:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        especialidade:
+          type: string
+          nullable: true
+        ativo:
+          type: integer
+
+    # ---------- MODALIDADE ----------
+    ModalidadeRequest:
+      type: object
+      required: [nome]
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+
+    Modalidade:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: integer
+
+    # ---------- HORÁRIO DE AULA ----------
+    HorarioAulaRequest:
+      type: object
+      required: [ct_id, profissional_id, modalidade_id, dia_semana, hora_inicio, hora_fim]
+      properties:
+        ct_id:
+          type: integer
+        profissional_id:
+          type: integer
+        modalidade_id:
+          type: integer
+        dia_semana:
+          type: integer
+          minimum: 0
+          maximum: 6
+        hora_inicio:
+          type: string
+          example: '08:00'
+        hora_fim:
+          type: string
+          example: '09:00'
+        limite_vagas:
+          type: integer
+          nullable: true
+
+    HorarioAula:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        ct_id:
+          type: integer
+        profissional_id:
+          type: integer
+        modalidade_id:
+          type: integer
+        dia_semana:
+          type: integer
+        hora_inicio:
+          type: string
+        hora_fim:
+          type: string
+        limite_vagas:
+          type: integer
+          nullable: true
+        ativo:
+          type: integer
+
+    # ---------- TRANSAÇÃO ----------
+    TransacaoRequest:
+      type: object
+      required: [tipo, descricao, valor]
+      properties:
+        tipo:
+          type: string
+          enum: [receita, despesa]
+        descricao:
+          type: string
+        valor:
+          type: number
+          format: double
+        ct_id:
+          type: integer
+          nullable: true
+
+    Transacao:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        ct_id:
+          type: integer
+          nullable: true
+        tipo:
+          type: string
+          enum: [receita, despesa]
+        descricao:
+          type: string
+        valor:
+          type: number
+
+    Resumo:
+      type: object
+      properties:
+        totalReceitas:
+          type: number
+        totalDespesas:
+          type: number
+
+    ResumoMensal:
+      type: array
+      items:
+        type: object
+        properties:
+          mes:
+            type: integer
+          totalReceitas:
+            type: number
+          totalDespesas:
+            type: number
+
+    # ---------- AGENDAMENTO ----------
+    AgendamentoRequest:
+      type: object
+      required: [aluno_id, horario_aula_id, data_aula]
+      properties:
+        aluno_id:
+          type: integer
+        horario_aula_id:
+          type: integer
+        data_aula:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [agendado, cancelado, compareceu, faltou]
+        observacao:
+          type: string
+          nullable: true
+
+    Agendamento:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        aluno_id:
+          type: integer
+        horario_aula_id:
+          type: integer
+        data_aula:
+          type: string
+          format: date
+        status:
+          type: string
+        observacao:
+          type: string
+          nullable: true
+
+    # ---------- PRESENÇA ----------
+    PresencaRequest:
+      type: object
+      required: [agendamento_id, status]
+      properties:
+        agendamento_id:
+          type: integer
+        status:
+          type: string
+        observacao:
+          type: string
+          nullable: true
+
+    Presenca:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        agendamento_id:
+          type: integer
+        status:
+          type: string
+        observacao:
+          type: string
+          nullable: true
+
+    # ---------- MENSALIDADE ----------
+    MensalidadeRequest:
+      type: object
+      required: [aluno_id, competencia, valor, vencimento]
+      properties:
+        aluno_id:
+          type: integer
+        competencia:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+          example: '2026-04'
+        valor:
+          type: number
+          format: double
+        vencimento:
+          type: string
+          format: date
+        observacao:
+          type: string
+          nullable: true
+        data_pagamento:
+          type: string
+          format: date
+          nullable: true
+
+    Mensalidade:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        aluno_id:
+          type: integer
+        competencia:
+          type: string
+        valor:
+          type: number
+        vencimento:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [pendente, pago, cancelado]
+        data_pagamento:
+          type: string
+          format: date
+          nullable: true
+        observacao:
+          type: string
+          nullable: true
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    Pagina:
+      name: pagina
+      in: query
+      schema:
+        type: integer
+        default: 1
+    Limite:
+      name: limite
+      in: query
+      schema:
+        type: integer
+        default: 20
+
+  responses:
+    '400':
+      description: Requisição inválida
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+    '401':
+      description: Não autenticado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+    '404':
+      description: Não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+    '409':
+      description: Conflito (duplicidade)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ==================== SAÚDE ====================
+  /saude:
+    get:
+      tags: [saude]
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: API funcionando
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  mensagem:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /ping:
+    get:
+      tags: [saude]
+      summary: Ping
+      security: []
+      responses:
+        '200':
+          description: Pong
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rota:
+                    type: string
+                  status:
+                    type: string
+
+  # ==================== AUTH ====================
+  /auth/cadastro:
+    post:
+      tags: [auth]
+      summary: Cadastrar conta + usuário owner
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CadastroRequest'
+      responses:
+        '201':
+          description: Cadastro realizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CadastroResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '409':
+          $ref: '#/components/responses/409'
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/401'
+
+  # ==================== CTs ====================
+  /cts:
+    get:
+      tags: [cts]
+      summary: Listar CTs (paginado)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Lista de CTs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ct'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+        '401':
+          $ref: '#/components/responses/401'
+    post:
+      tags: [cts]
+      summary: Criar CT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CtRequest'
+      responses:
+        '201':
+          description: CT criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+        '409':
+          $ref: '#/components/responses/409'
+
+  /cts/{id}:
+    get:
+      tags: [cts]
+      summary: Buscar CT por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: CT encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Ct'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [cts]
+      summary: Atualizar CT
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CtRequest'
+      responses:
+        '200':
+          description: CT atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Ct'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /cts/{id}/desativar:
+    patch:
+      tags: [cts]
+      summary: Desativar CT
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: CT desativado
+        '404':
+          $ref: '#/components/responses/404'
+
+  /cts/{id}/ativar:
+    patch:
+      tags: [cts]
+      summary: Ativar CT
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: CT ativado
+        '404':
+          $ref: '#/components/responses/404'
+
+  # ==================== ALUNOS ====================
+  /alunos:
+    get:
+      tags: [alunos]
+      summary: Listar alunos
+      parameters:
+        - name: ct_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de alunos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Aluno'
+    post:
+      tags: [alunos]
+      summary: Criar aluno
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlunoRequest'
+      responses:
+        '201':
+          description: Aluno criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Aluno'
+        '409':
+          $ref: '#/components/responses/409'
+
+  /alunos/{id}:
+    get:
+      tags: [alunos]
+      summary: Buscar aluno por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Aluno encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Aluno'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [alunos]
+      summary: Atualizar aluno
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlunoRequest'
+      responses:
+        '200':
+          description: Aluno atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Aluno'
+    delete:
+      tags: [alunos]
+      summary: Desativar aluno
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Aluno desativado
+
+  /alunos/{id}/ativar:
+    patch:
+      tags: [alunos]
+      summary: Ativar aluno
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Aluno ativado
+
+  # ==================== PROFISSIONAIS ====================
+  /profissionais:
+    get:
+      tags: [profissionais]
+      summary: Listar profissionais (paginado)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Lista de profissionais
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Profissional'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+    post:
+      tags: [profissionais]
+      summary: Criar profissional
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfissionalRequest'
+      responses:
+        '201':
+          description: Profissional criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+        '409':
+          $ref: '#/components/responses/409'
+
+  /profissionais/{id}:
+    get:
+      tags: [profissionais]
+      summary: Buscar profissional por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Profissional encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Profissional'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [profissionais]
+      summary: Atualizar profissional
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfissionalRequest'
+      responses:
+        '200':
+          description: Profissional atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Profissional'
+
+  /profissionais/{id}/desativar:
+    patch:
+      tags: [profissionais]
+      summary: Desativar profissional
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Profissional desativado
+
+  /profissionais/{id}/ativar:
+    patch:
+      tags: [profissionais]
+      summary: Ativar profissional
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Profissional ativado
+
+  # ==================== MODALIDADES ====================
+  /modalidades:
+    get:
+      tags: [modalidades]
+      summary: Listar modalidades (paginado)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Lista de modalidades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Modalidade'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+    post:
+      tags: [modalidades]
+      summary: Criar modalidade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModalidadeRequest'
+      responses:
+        '201':
+          description: Modalidade criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+        '409':
+          $ref: '#/components/responses/409'
+
+  /modalidades/{id}:
+    get:
+      tags: [modalidades]
+      summary: Buscar modalidade por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Modalidade encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Modalidade'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [modalidades]
+      summary: Atualizar modalidade
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModalidadeRequest'
+      responses:
+        '200':
+          description: Modalidade atualizada
+
+  /modalidades/{id}/desativar:
+    patch:
+      tags: [modalidades]
+      summary: Desativar modalidade
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Modalidade desativada
+
+  /modalidades/{id}/ativar:
+    patch:
+      tags: [modalidades]
+      summary: Ativar modalidade
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Modalidade ativada
+
+  # ==================== HORÁRIOS DE AULA ====================
+  /horarios-aula:
+    get:
+      tags: [horarios-aula]
+      summary: Listar horários (paginado)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Lista de horários
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HorarioAula'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+    post:
+      tags: [horarios-aula]
+      summary: Criar horário de aula
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HorarioAulaRequest'
+      responses:
+        '201':
+          description: Horário criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+
+  /horarios-aula/{id}:
+    get:
+      tags: [horarios-aula]
+      summary: Buscar horário por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Horário encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/HorarioAula'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [horarios-aula]
+      summary: Atualizar horário
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HorarioAulaRequest'
+      responses:
+        '200':
+          description: Horário atualizado
+
+  /horarios-aula/{id}/desativar:
+    patch:
+      tags: [horarios-aula]
+      summary: Desativar horário
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Horário desativado
+
+  /horarios-aula/{id}/ativar:
+    patch:
+      tags: [horarios-aula]
+      summary: Ativar horário
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Horário ativado
+
+  # ==================== TRANSAÇÕES ====================
+  /transacoes:
+    get:
+      tags: [transacoes]
+      summary: Listar transações (paginado, com filtros)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+        - name: tipo
+          in: query
+          schema:
+            type: string
+            enum: [receita, despesa]
+        - name: descricao
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de transações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transacao'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+    post:
+      tags: [transacoes]
+      summary: Criar transação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransacaoRequest'
+      responses:
+        '201':
+          description: Transação criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+        '409':
+          $ref: '#/components/responses/409'
+
+  /transacoes/resumo:
+    get:
+      tags: [transacoes]
+      summary: Resumo de receitas e despesas
+      responses:
+        '200':
+          description: Resumo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Resumo'
+
+  /transacoes/resumo/mensal:
+    get:
+      tags: [transacoes]
+      summary: Resumo mensal de receitas e despesas
+      parameters:
+        - name: ano
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Resumo mensal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/ResumoMensal'
+
+  /transacoes/{id}:
+    get:
+      tags: [transacoes]
+      summary: Buscar transação por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Transação encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Transacao'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [transacoes]
+      summary: Atualizar transação
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransacaoRequest'
+      responses:
+        '200':
+          description: Transação atualizada
+    delete:
+      tags: [transacoes]
+      summary: Deletar transação
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Transação deletada
+        '404':
+          $ref: '#/components/responses/404'
+
+  # ==================== AGENDAMENTOS ====================
+  /agendamentos:
+    get:
+      tags: [agendamentos]
+      summary: Listar agendamentos (paginado)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Lista de agendamentos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Agendamento'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+    post:
+      tags: [agendamentos]
+      summary: Criar agendamento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendamentoRequest'
+      responses:
+        '201':
+          description: Agendamento criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+        '409':
+          $ref: '#/components/responses/409'
+
+  /agendamentos/{id}:
+    get:
+      tags: [agendamentos]
+      summary: Buscar agendamento por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Agendamento encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Agendamento'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [agendamentos]
+      summary: Atualizar agendamento
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendamentoRequest'
+      responses:
+        '200':
+          description: Agendamento atualizado
+
+  /agendamentos/{id}/cancelar:
+    patch:
+      tags: [agendamentos]
+      summary: Cancelar agendamento
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Agendamento cancelado
+
+  /agendamentos/{id}/status:
+    patch:
+      tags: [agendamentos]
+      summary: Atualizar status do agendamento
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [agendado, cancelado, compareceu, faltou]
+      responses:
+        '200':
+          description: Status atualizado
+
+  # ==================== PRESENÇAS ====================
+  /presencas:
+    get:
+      tags: [presencas]
+      summary: Listar presenças (paginado)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Lista de presenças
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Presenca'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+    post:
+      tags: [presencas]
+      summary: Registrar presença
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresencaRequest'
+      responses:
+        '201':
+          description: Presença registrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+        '409':
+          $ref: '#/components/responses/409'
+
+  /presencas/{id}:
+    get:
+      tags: [presencas]
+      summary: Buscar presença por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Presença encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Presenca'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [presencas]
+      summary: Atualizar presença
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresencaRequest'
+      responses:
+        '200':
+          description: Presença atualizada
+
+  /presencas/{id}/status:
+    patch:
+      tags: [presencas]
+      summary: Atualizar status da presença
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+      responses:
+        '200':
+          description: Status atualizado
+
+  # ==================== MENSALIDADES ====================
+  /mensalidades:
+    get:
+      tags: [mensalidades]
+      summary: Listar mensalidades (paginado, com filtros)
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+        - name: aluno_id
+          in: query
+          schema:
+            type: integer
+        - name: competencia
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pendente, pago, cancelado]
+      responses:
+        '200':
+          description: Lista de mensalidades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Mensalidade'
+                  meta:
+                    $ref: '#/components/schemas/Meta'
+    post:
+      tags: [mensalidades]
+      summary: Criar mensalidade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MensalidadeRequest'
+      responses:
+        '201':
+          description: Mensalidade criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    type: object
+                    properties:
+                      mensagem:
+                        type: string
+                      id:
+                        type: integer
+        '409':
+          $ref: '#/components/responses/409'
+
+  /mensalidades/{id}:
+    get:
+      tags: [mensalidades]
+      summary: Buscar mensalidade por ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Mensalidade encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dados:
+                    $ref: '#/components/schemas/Mensalidade'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      tags: [mensalidades]
+      summary: Atualizar mensalidade
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MensalidadeRequest'
+      responses:
+        '200':
+          description: Mensalidade atualizada
+
+  /mensalidades/{id}/pagar:
+    patch:
+      tags: [mensalidades]
+      summary: Marcar mensalidade como paga
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Mensalidade paga
+        '409':
+          $ref: '#/components/responses/409'
+
+  /mensalidades/{id}/cancelar:
+    patch:
+      tags: [mensalidades]
+      summary: Cancelar mensalidade
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Mensalidade cancelada

@@ -49,6 +49,8 @@ class TransacaoRepository {
     const [dados] = await conexao.query(consulta, params);
     const [count] = await conexao.query(consultaContagem, paramsCount);
 
+    dados.forEach(d => { if (d.valor != null) d.valor = Number(d.valor); });
+
     return {
       dados,
       total: Number(count[0].total)
@@ -63,7 +65,9 @@ class TransacaoRepository {
       [id, accountId]
     );
 
-    return linhas[0] || null;
+    const row = linhas[0] || null;
+    if (row && row.valor != null) row.valor = Number(row.valor);
+    return row;
   }
 
   async existePorTipoEDescricao(tipo, descricao, accountId) {

@@ -31,8 +31,8 @@ describe('Horários de Aula Integration Tests', () => {
 
     const payload = {
       ct_id: ctId,
-      profissional_id: prof.body.id,
-      modalidade_id: mod.body.id,
+      profissional_id: prof.body.dados.id,
+      modalidade_id: mod.body.dados.id,
       dia_semana: 1,
       hora_inicio: '19:00:00',
       hora_fim: '20:00:00',
@@ -45,7 +45,7 @@ describe('Horários de Aula Integration Tests', () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('id');
   });
 
   it('validação de horário inválido', async () => {
@@ -67,8 +67,8 @@ describe('Horários de Aula Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 2,
         hora_inicio: '18:00:00',
         hora_fim: '17:00:00'
@@ -97,8 +97,8 @@ describe('Horários de Aula Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 3,
         hora_inicio: '10:00:00',
         hora_fim: '11:00:00'
@@ -112,8 +112,8 @@ describe('Horários de Aula Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 3,
         hora_inicio: '10:30:00',
         hora_fim: '11:30:00'
@@ -141,14 +141,14 @@ describe('Horários de Aula Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         ct_id: ctId,
-        profissional_id: prof.body.id,
-        modalidade_id: mod.body.id,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
         dia_semana: 4,
         hora_inicio: '08:00:00',
         hora_fim: '09:00:00'
       });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const list = await request(app)
       .get('/horarios-aula')
@@ -178,7 +178,7 @@ describe('Horários de Aula Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(after.status).toBe(200);
-    expect(after.body.ativo === 0 || after.body.ativo === false).toBeTruthy();
+    expect(after.body.dados.ativo === 0 || after.body.dados.ativo === false).toBeTruthy();
   });
 
   it('impedir uso de CT/profissional/modalidade de outra conta', async () => {
@@ -206,9 +206,9 @@ describe('Horários de Aula Integration Tests', () => {
       .post('/horarios-aula')
       .set('Authorization', `Bearer ${a.token}`)
       .send({
-        ct_id: ctB.body.id,
-        profissional_id: profB.body.id,
-        modalidade_id: modB.body.id,
+        ct_id: ctB.body.dados.id,
+        profissional_id: profB.body.dados.id,
+        modalidade_id: modB.body.dados.id,
         dia_semana: 5,
         hora_inicio: '12:00:00',
         hora_fim: '13:00:00'

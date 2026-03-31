@@ -26,7 +26,7 @@ describe('Transações Integration Tests', () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('id');
   });
 
   it('validar campos obrigatórios ao criar', async () => {
@@ -59,7 +59,7 @@ describe('Transações Integration Tests', () => {
 
     expect(resAll.status).toBe(200);
     expect(resAll.body).toHaveProperty('dados');
-    expect(resAll.body.total).toBe(2);
+    expect(resAll.body.meta.total).toBe(2);
 
     const resFiltro = await request(app)
       .get('/transacoes')
@@ -67,7 +67,7 @@ describe('Transações Integration Tests', () => {
       .query({ tipo: 'receita' });
 
     expect(resFiltro.status).toBe(200);
-    expect(resFiltro.body.total).toBe(1);
+    expect(resFiltro.body.meta.total).toBe(1);
   });
 
   it('filtrar por descrição parcial e paginação', async () => {
@@ -87,7 +87,7 @@ describe('Transações Integration Tests', () => {
       .query({ pagina: 1, limite: 10 });
 
     expect(page1.status).toBe(200);
-    expect(page1.body.pagina).toBe(1);
+    expect(page1.body.meta.pagina).toBe(1);
     expect(page1.body.dados.length).toBe(10);
 
     const page2 = await request(app)
@@ -96,7 +96,7 @@ describe('Transações Integration Tests', () => {
       .query({ pagina: 2, limite: 10 });
 
     expect(page2.status).toBe(200);
-    expect(page2.body.pagina).toBe(2);
+    expect(page2.body.meta.pagina).toBe(2);
     expect(page2.body.dados.length).toBe(5);
 
     const filtroDesc = await request(app)
@@ -105,7 +105,7 @@ describe('Transações Integration Tests', () => {
       .query({ descricao: 'Venda 1' });
 
     expect(filtroDesc.status).toBe(200);
-    expect(filtroDesc.body.total).toBeGreaterThanOrEqual(1);
+    expect(filtroDesc.body.meta.total).toBeGreaterThanOrEqual(1);
   });
 
   it('buscar, atualizar e deletar transação', async () => {
@@ -117,14 +117,14 @@ describe('Transações Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ tipo: 'receita', descricao: 'ToEdit', valor: 50, ct_id: ctId });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const get = await request(app)
       .get(`/transacoes/${id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
-    expect(get.body).toHaveProperty('id', id);
+    expect(get.body.dados).toHaveProperty('id', id);
 
     const up = await request(app)
       .put(`/transacoes/${id}`)
@@ -157,7 +157,7 @@ describe('Transações Integration Tests', () => {
       .set('Authorization', `Bearer ${b.token}`)
       .send({ tipo: 'receita', descricao: 'Trans B', valor: 10, ct_id: ctB });
 
-    const idB = createB.body.id;
+    const idB = createB.body.dados.id;
 
     const listA = await request(app)
       .get('/transacoes')

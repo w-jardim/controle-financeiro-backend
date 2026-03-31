@@ -26,10 +26,10 @@ describe('Mensalidades Integration Tests', () => {
     const res = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-04', valor: 120.50, vencimento: '2026-04-10' });
+      .send({ aluno_id: aluno.body.dados.id, competencia: '2026-04', valor: 120.50, vencimento: '2026-04-10' });
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('id');
   });
 
   it('validação de campos obrigatórios', async () => {
@@ -55,7 +55,7 @@ describe('Mensalidades Integration Tests', () => {
     const res = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-13', valor: 100, vencimento: '2026-04-10' });
+      .send({ aluno_id: aluno.body.dados.id, competencia: '2026-13', valor: 100, vencimento: '2026-04-10' });
 
     expect(res.status).toBe(400);
   });
@@ -72,14 +72,14 @@ describe('Mensalidades Integration Tests', () => {
     const first = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-05', valor: 90, vencimento: '2026-05-10' });
+      .send({ aluno_id: aluno.body.dados.id, competencia: '2026-05', valor: 90, vencimento: '2026-05-10' });
 
     expect(first.status).toBe(201);
 
     const second = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-05', valor: 90, vencimento: '2026-05-10' });
+      .send({ aluno_id: aluno.body.dados.id, competencia: '2026-05', valor: 90, vencimento: '2026-05-10' });
 
     expect(second.status).toBe(409);
   });
@@ -101,12 +101,12 @@ describe('Mensalidades Integration Tests', () => {
     await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno1.body.id, competencia: '2026-06', valor: 80, vencimento: '2026-06-10' });
+      .send({ aluno_id: aluno1.body.dados.id, competencia: '2026-06', valor: 80, vencimento: '2026-06-10' });
 
     await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno2.body.id, competencia: '2026-07', valor: 85, vencimento: '2026-07-10' });
+      .send({ aluno_id: aluno2.body.dados.id, competencia: '2026-07', valor: 85, vencimento: '2026-07-10' });
 
     const listAll = await request(app)
       .get('/mensalidades')
@@ -114,15 +114,15 @@ describe('Mensalidades Integration Tests', () => {
 
     expect(listAll.status).toBe(200);
     expect(listAll.body.dados.length).toBeGreaterThanOrEqual(2);
-    expect(listAll.body.total).toBeGreaterThanOrEqual(listAll.body.dados.length);
+    expect(listAll.body.meta.total).toBeGreaterThanOrEqual(listAll.body.dados.length);
 
     const filterByAluno = await request(app)
-      .get(`/mensalidades?aluno_id=${aluno1.body.id}`)
+      .get(`/mensalidades?aluno_id=${aluno1.body.dados.id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(filterByAluno.status).toBe(200);
-    expect(filterByAluno.body.dados.every(m => m.aluno_id === aluno1.body.id)).toBe(true);
-    expect(filterByAluno.body.total).toBe(filterByAluno.body.dados.length);
+    expect(filterByAluno.body.dados.every(m => m.aluno_id === aluno1.body.dados.id)).toBe(true);
+    expect(filterByAluno.body.meta.total).toBe(filterByAluno.body.dados.length);
 
     const filterByCompetencia = await request(app)
       .get('/mensalidades?competencia=2026-07')
@@ -130,7 +130,7 @@ describe('Mensalidades Integration Tests', () => {
 
     expect(filterByCompetencia.status).toBe(200);
     expect(filterByCompetencia.body.dados.every(m => m.competencia === '2026-07')).toBe(true);
-    expect(filterByCompetencia.body.total).toBe(filterByCompetencia.body.dados.length);
+    expect(filterByCompetencia.body.meta.total).toBe(filterByCompetencia.body.dados.length);
   });
 
   it('busca por id e atualização', async () => {
@@ -145,22 +145,22 @@ describe('Mensalidades Integration Tests', () => {
     const created = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-08', valor: 100, vencimento: '2026-08-10' });
+      .send({ aluno_id: aluno.body.dados.id, competencia: '2026-08', valor: 100, vencimento: '2026-08-10' });
 
     const get = await request(app)
-      .get(`/mensalidades/${created.body.id}`)
+      .get(`/mensalidades/${created.body.dados.id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
 
     const up = await request(app)
-      .put(`/mensalidades/${created.body.id}`)
+      .put(`/mensalidades/${created.body.dados.id}`)
       .set('Authorization', `Bearer ${token}`)
       .send({ valor: 120, observacao: 'Ajuste' });
 
     expect(up.status).toBe(200);
-    expect(Number(up.body.valor)).toBe(120);
-    expect(up.body.observacao).toBe('Ajuste');
+    expect(up.body.dados.valor).toBe(120);
+    expect(up.body.dados.observacao).toBe('Ajuste');
   });
 
   it('marcar como paga e cancelar, e impedir transições inválidas', async () => {
@@ -175,20 +175,20 @@ describe('Mensalidades Integration Tests', () => {
     const created = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-09', valor: 110, vencimento: '2026-09-10' });
+      .send({ aluno_id: aluno.body.dados.id, competencia: '2026-09', valor: 110, vencimento: '2026-09-10' });
 
     // pagar
     const pagar = await request(app)
-      .patch(`/mensalidades/${created.body.id}/pagar`)
+      .patch(`/mensalidades/${created.body.dados.id}/pagar`)
       .set('Authorization', `Bearer ${token}`)
       .send({});
 
     expect(pagar.status).toBe(200);
-    expect(pagar.body.status).toBe('pago');
+    expect(pagar.body.dados.status).toBe('pago');
 
     // impedir cancelar mensalidade paga
     const cancelarDepoisPago = await request(app)
-      .patch(`/mensalidades/${created.body.id}/cancelar`)
+      .patch(`/mensalidades/${created.body.dados.id}/cancelar`)
       .set('Authorization', `Bearer ${token}`)
       .send({});
 
@@ -198,19 +198,19 @@ describe('Mensalidades Integration Tests', () => {
     const created2 = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${token}`)
-      .send({ aluno_id: aluno.body.id, competencia: '2026-10', valor: 115, vencimento: '2026-10-10' });
+      .send({ aluno_id: aluno.body.dados.id, competencia: '2026-10', valor: 115, vencimento: '2026-10-10' });
 
     const cancelar = await request(app)
-      .patch(`/mensalidades/${created2.body.id}/cancelar`)
+      .patch(`/mensalidades/${created2.body.dados.id}/cancelar`)
       .set('Authorization', `Bearer ${token}`)
       .send({});
 
     expect(cancelar.status).toBe(200);
-    expect(cancelar.body.status).toBe('cancelado');
+    expect(cancelar.body.dados.status).toBe('cancelado');
 
     // impedir pagar mensalidade cancelada
     const pagarCancelada = await request(app)
-      .patch(`/mensalidades/${created2.body.id}/pagar`)
+      .patch(`/mensalidades/${created2.body.dados.id}/pagar`)
       .set('Authorization', `Bearer ${token}`)
       .send({});
 
@@ -229,22 +229,22 @@ describe('Mensalidades Integration Tests', () => {
     const alunoB = await request(app)
       .post('/alunos')
       .set('Authorization', `Bearer ${b.token}`)
-      .send({ nome: 'Aluno B', ct_id: ctB.body.id });
+      .send({ nome: 'Aluno B', ct_id: ctB.body.dados.id });
 
     const createdB = await request(app)
       .post('/mensalidades')
       .set('Authorization', `Bearer ${b.token}`)
-      .send({ aluno_id: alunoB.body.id, competencia: '2026-11', valor: 130, vencimento: '2026-11-10' });
+      .send({ aluno_id: alunoB.body.dados.id, competencia: '2026-11', valor: 130, vencimento: '2026-11-10' });
 
     // account A tenta acessar recurso de B
     const getByA = await request(app)
-      .get(`/mensalidades/${createdB.body.id}`)
+      .get(`/mensalidades/${createdB.body.dados.id}`)
       .set('Authorization', `Bearer ${a.token}`);
 
     expect(getByA.status).toBe(404);
 
     const payByA = await request(app)
-      .patch(`/mensalidades/${createdB.body.id}/pagar`)
+      .patch(`/mensalidades/${createdB.body.dados.id}/pagar`)
       .set('Authorization', `Bearer ${a.token}`)
       .send({});
 

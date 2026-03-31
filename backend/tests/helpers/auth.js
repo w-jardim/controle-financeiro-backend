@@ -26,10 +26,10 @@ async function criarContaELogar(overrides = {}) {
   }
 
   return {
-    token: resLogin.body.token,
-    accountId: resCadastro.body.accountId,
-    userId: resCadastro.body.userId,
-    ctId: resCadastro.body.ctId
+    token: resLogin.body.dados.token,
+    accountId: resCadastro.body.dados.accountId,
+    userId: resCadastro.body.dados.userId,
+    ctId: resCadastro.body.dados.ctId
   };
 }
 

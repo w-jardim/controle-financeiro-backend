@@ -22,7 +22,7 @@ describe('CTs Integration Tests', () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.dados)).toBe(true);
-    expect(res.body.total).toBe(0);
+    expect(res.body.meta.total).toBe(0);
   });
 
   it('criar CT com sucesso', async () => {
@@ -34,7 +34,7 @@ describe('CTs Integration Tests', () => {
       .send({ nome: 'CT Teste' });
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('id');
   });
 
   it('impedir duplicidade de nome por conta', async () => {
@@ -66,14 +66,14 @@ describe('CTs Integration Tests', () => {
       .send({ nome: 'CT Para Buscar' });
 
     expect(create.status).toBe(201);
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .get(`/cts/${id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('id', id);
+    expect(res.body.dados).toHaveProperty('id', id);
   });
 
   it('atualizar CT', async () => {
@@ -84,7 +84,7 @@ describe('CTs Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'CT Para Atualizar' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .put(`/cts/${id}`)
@@ -98,7 +98,7 @@ describe('CTs Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
-    expect(get.body).toHaveProperty('nome', 'CT Atualizado');
+    expect(get.body.dados).toHaveProperty('nome', 'CT Atualizado');
   });
 
   it('desativar CT', async () => {
@@ -109,7 +109,7 @@ describe('CTs Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'CT Para Desativar' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .patch(`/cts/${id}/desativar`)
@@ -122,7 +122,7 @@ describe('CTs Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
-    expect(get.body.ativo === 0 || get.body.ativo === false).toBeTruthy();
+    expect(get.body.dados.ativo === 0 || get.body.dados.ativo === false).toBeTruthy();
   });
 
   it('ativar CT', async () => {
@@ -133,7 +133,7 @@ describe('CTs Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'CT Para Ativar' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     await request(app)
       .patch(`/cts/${id}/desativar`)
@@ -150,7 +150,7 @@ describe('CTs Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(get.status).toBe(200);
-    expect(get.body.ativo === 1 || get.body.ativo === true).toBeTruthy();
+    expect(get.body.dados.ativo === 1 || get.body.dados.ativo === true).toBeTruthy();
   });
 
   it('garantir isolamento por account', async () => {
@@ -162,7 +162,7 @@ describe('CTs Integration Tests', () => {
       .set('Authorization', `Bearer ${b.token}`)
       .send({ nome: 'CT Conta B' });
 
-    const idB = createB.body.id;
+    const idB = createB.body.dados.id;
 
     const listA = await request(app)
       .get('/cts')

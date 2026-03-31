@@ -19,8 +19,8 @@ describe('Auth Integration Tests', () => {
     const res = await request(app).post('/auth/cadastro').send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('accountId');
-    expect(res.body).toHaveProperty('userId');
+    expect(res.body.dados).toHaveProperty('accountId');
+    expect(res.body.dados).toHaveProperty('userId');
   });
 
   it('Login com sucesso — POST /auth/login', async () => {
@@ -40,8 +40,8 @@ describe('Auth Integration Tests', () => {
     });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
-    expect(res.body.token).toBeTruthy();
+    expect(res.body.dados).toHaveProperty('token');
+    expect(res.body.dados.token).toBeTruthy();
   });
 
   it('Login com senha inválida — POST /auth/login retorna 401', async () => {

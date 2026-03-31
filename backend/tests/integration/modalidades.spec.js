@@ -24,8 +24,8 @@ describe('Modalidades Integration Tests', () => {
       .send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body).toHaveProperty('mensagem');
+    expect(res.body.dados).toHaveProperty('id');
+    expect(res.body.dados).toHaveProperty('mensagem');
   });
 
   it('validação de campos obrigatórios', async () => {
@@ -75,9 +75,9 @@ describe('Modalidades Integration Tests', () => {
       .query({ pagina: 1, limite: 10 });
 
     expect(res.status).toBe(200);
-    expect(res.body.pagina).toBe(1);
+    expect(res.body.meta.pagina).toBe(1);
     expect(res.body.dados.length).toBe(10);
-    expect(res.body.total).toBe(12);
+    expect(res.body.meta.total).toBe(12);
   });
 
   it('buscar por id', async () => {
@@ -88,15 +88,15 @@ describe('Modalidades Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'Boxe' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .get(`/modalidades/${id}`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('id', id);
-    expect(res.body).toHaveProperty('nome', 'Boxe');
+    expect(res.body.dados).toHaveProperty('id', id);
+    expect(res.body.dados).toHaveProperty('nome', 'Boxe');
   });
 
   it('atualização', async () => {
@@ -107,7 +107,7 @@ describe('Modalidades Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'Infantil' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     const res = await request(app)
       .put(`/modalidades/${id}`)
@@ -115,7 +115,7 @@ describe('Modalidades Integration Tests', () => {
       .send({ nome: 'Infantil - Iniciante', descricao: 'Para crianças iniciantes' });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('nome', 'Infantil - Iniciante');
+    expect(res.body.dados).toHaveProperty('nome', 'Infantil - Iniciante');
   });
 
   it('ativar/desativar', async () => {
@@ -126,7 +126,7 @@ describe('Modalidades Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({ nome: 'Avançado' });
 
-    const id = create.body.id;
+    const id = create.body.dados.id;
 
     await request(app)
       .patch(`/modalidades/${id}/desativar`)
@@ -137,7 +137,7 @@ describe('Modalidades Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(get1.status).toBe(200);
-    expect(get1.body.ativo === 0 || get1.body.ativo === false).toBeTruthy();
+    expect(get1.body.dados.ativo === 0 || get1.body.dados.ativo === false).toBeTruthy();
 
     await request(app)
       .patch(`/modalidades/${id}/ativar`)
@@ -148,7 +148,7 @@ describe('Modalidades Integration Tests', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(get2.status).toBe(200);
-    expect(get2.body.ativo === 1 || get2.body.ativo === true).toBeTruthy();
+    expect(get2.body.dados.ativo === 1 || get2.body.dados.ativo === true).toBeTruthy();
   });
 
   it('isolamento por account', async () => {
@@ -160,7 +160,7 @@ describe('Modalidades Integration Tests', () => {
       .set('Authorization', `Bearer ${b.token}`)
       .send({ nome: 'Modalidade Conta B' });
 
-    const idB = createB.body.id;
+    const idB = createB.body.dados.id;
 
     const listA = await request(app)
       .get('/modalidades')
