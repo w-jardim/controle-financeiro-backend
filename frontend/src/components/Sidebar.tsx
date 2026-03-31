@@ -6,6 +6,7 @@ const items = [
   { to: '/alunos', label: 'Alunos' },
   { to: '/profissionais', label: 'Profissionais' },
   { to: '/modalidades', label: 'Modalidades' },
+  { to: '/cts', label: 'CTs' },
   { to: '/horarios', label: 'Horários' },
   { to: '/agendamentos', label: 'Agendamentos' },
   { to: '/presencas', label: 'Presenças' },

@@ -14,6 +14,7 @@ import Agendamentos from './pages/agendamentos/Agendamentos'
 import Presencas from './pages/presencas/Presencas'
 import Mensalidades from './pages/mensalidades/Mensalidades'
 import Transacoes from './pages/transacoes/Transacoes'
+import Cts from './pages/cts/Cts'
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="alunos" element={<Alunos />} />
           <Route path="profissionais" element={<Profissionais />} />
           <Route path="modalidades" element={<Modalidades />} />
+          <Route path="cts" element={<Cts />} />
           <Route path="horarios" element={<Horarios />} />
           <Route path="agendamentos" element={<Agendamentos />} />
           <Route path="presencas" element={<Presencas />} />
