@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useCts } from '../../hooks/useCts';
 import { useForm } from 'react-hook-form';
+import type { FieldError } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { criarCtSchema } from '../../schemas/ct.schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,11 +21,13 @@ const Cts: React.FC = () => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(criarCtSchema),
   });
+  // Narrow the field error type so we render only the string message
+  const nomeError = errors.nome as FieldError | undefined;
 
   const criarMut = useMutation({
     mutationFn: (dados: any) => api.post('/cts', dados),
     onSuccess: () => {
-      queryClient.invalidateQueries(['cts']);
+      queryClient.invalidateQueries({ queryKey: ['cts'] });
       setFeedbackMessage('CT salvo com sucesso');
       setTimeout(() => setFeedbackMessage(null), 3000);
       setShowForm(false);
@@ -40,7 +43,7 @@ const Cts: React.FC = () => {
   const atualizarMut = useMutation({
     mutationFn: ({ id, dados }: any) => api.put(`/cts/${id}`, dados),
     onSuccess: () => {
-      queryClient.invalidateQueries(['cts']);
+      queryClient.invalidateQueries({ queryKey: ['cts'] });
       setFeedbackMessage('CT atualizado com sucesso');
       setTimeout(() => setFeedbackMessage(null), 3000);
       setShowForm(false);
@@ -55,12 +58,12 @@ const Cts: React.FC = () => {
 
   const desativarMut = useMutation({
     mutationFn: (id: number) => api.patch(`/cts/${id}/desativar`),
-    onSuccess: () => queryClient.invalidateQueries(['cts']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cts'] }),
   });
 
   const ativarMut = useMutation({
     mutationFn: (id: number) => api.patch(`/cts/${id}/ativar`),
-    onSuccess: () => queryClient.invalidateQueries(['cts']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cts'] }),
   });
 
   const onSubmit = async (formData: any) => {
@@ -158,8 +161,8 @@ const Cts: React.FC = () => {
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                {errors.nome && (
-                  <p className="text-red-500 text-sm mt-1">{errors.nome?.message}</p>
+                {nomeError?.message && (
+                  <p className="text-red-500 text-sm mt-1">{nomeError.message}</p>
                 )}
               </div>
 
