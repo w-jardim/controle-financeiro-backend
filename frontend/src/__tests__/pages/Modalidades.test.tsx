@@ -25,6 +25,8 @@ const createWrapper = () => {
 describe('Modalidades', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // mock window.confirm used by the component
+    global.confirm = vi.fn(() => true) as unknown as (message?: string) => boolean;
   });
 
   it('deve renderizar lista vazia', async () => {
@@ -149,5 +151,61 @@ describe('Modalidades', () => {
     await waitFor(() => {
       expect(screen.getByText('Erro ao carregar modalidades')).toBeInTheDocument();
     });
+  });
+
+  it('deve desativar modalidade e atualizar lista', async () => {
+    // first call: returns one active modalidade
+    vi.mocked(modalidadesService.listarModalidadesApi)
+      .mockResolvedValueOnce({
+        pagina: 1,
+        limite: 10,
+        total: 1,
+        totalPaginas: 1,
+        dados: [
+          {
+            id: 10,
+            nome: 'Para Desativar',
+            descricao: 'desc',
+            ativo: true,
+            createdAt: '2024-01-01',
+            updatedAt: '2024-01-01',
+          },
+        ],
+      })
+      // second call after mutation: returns same item as inactive
+      .mockResolvedValueOnce({
+        pagina: 1,
+        limite: 10,
+        total: 1,
+        totalPaginas: 1,
+        dados: [
+          {
+            id: 10,
+            nome: 'Para Desativar',
+            descricao: 'desc',
+            ativo: false,
+            createdAt: '2024-01-01',
+            updatedAt: '2024-01-01',
+          },
+        ],
+      });
+
+    vi.mocked(modalidadesService.desativarModalidadeApi).mockResolvedValue({ mensagem: 'Modalidade desativada com sucesso' });
+
+    const user = userEvent.setup();
+    render(<Modalidades />, { wrapper: createWrapper() });
+
+    // wait initial render
+    await waitFor(() => expect(screen.getByText('Para Desativar')).toBeInTheDocument());
+
+    const botaoDesativar = screen.getByText('Desativar');
+    await user.click(botaoDesativar);
+
+    await waitFor(() => {
+      expect(modalidadesService.desativarModalidadeApi).toHaveBeenCalledWith(10);
+    });
+
+    // after mutation and refetch, UI should show 'Inativo'
+    await waitFor(() => expect(screen.getByText('Inativo')).toBeInTheDocument());
   });
 });
