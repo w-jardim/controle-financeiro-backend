@@ -131,7 +131,7 @@ const Alunos: React.FC = () => {
             {cts.length > 1 && (
               <div className="mb-2">
                 <label className="block" htmlFor="ct_select">Centro de Treinamento</label>
-                <select id="ct_select" name="ct_select" className="input" value={selectedCtId ?? ''} onChange={(e) => setSelectedCtId(Number(e.target.value) || null)}>
+                <select id="ct_select" className="input" value={selectedCtId ?? ''} onChange={(e) => setSelectedCtId(Number(e.target.value) || null)}>
                   <option value="">Selecione</option>
                   {cts.map((ct: any) => (
                     <option key={ct.id} value={ct.id}>{ct.nome}</option>
@@ -141,36 +141,36 @@ const Alunos: React.FC = () => {
             )}
             <div className="mb-2">
               <label className="block" htmlFor="nome">Nome</label>
-              <input id="nome" name="nome" {...register('nome')} className="input" />
-              {errors.nome && <p className="text-red-600">{errors.nome.message}</p>}
+              <input id="nome" {...register('nome')} className="input" />
+              {errors.nome && <p className="text-red-600">{errors.nome?.message}</p>}
             </div>
             <div className="mb-2 grid grid-cols-2 gap-2">
               <div>
                 <label className="block" htmlFor="cpf">CPF</label>
-                <input id="cpf" name="cpf" className="input" {...register('cpf')} />
+                <input id="cpf" className="input" {...register('cpf')} />
               </div>
               <div>
                 <label className="block" htmlFor="data_nascimento">Data Nascimento</label>
-                <input id="data_nascimento" name="data_nascimento" type="date" {...register('data_nascimento')} className="input" />
+                <input id="data_nascimento" type="date" {...register('data_nascimento')} className="input" />
               </div>
             </div>
             <div className="mb-2 grid grid-cols-2 gap-2">
               <div>
                 <label className="block" htmlFor="telefone">Telefone</label>
-                <input id="telefone" name="telefone" {...register('telefone')} className="input" />
+                <input id="telefone" {...register('telefone')} className="input" />
               </div>
               <div>
                 <label className="block" htmlFor="email">Email</label>
-                <input id="email" name="email" {...register('email')} className="input" />
+                <input id="email" {...register('email')} className="input" />
               </div>
             </div>
             <div className="mb-2">
               <label className="block" htmlFor="nome_responsavel">Nome do responsável</label>
-              <input id="nome_responsavel" name="nome_responsavel" {...register('nome_responsavel')} className="input" />
+              <input id="nome_responsavel" {...register('nome_responsavel')} className="input" />
             </div>
             <div className="mb-2">
               <label className="block" htmlFor="telefone_responsavel">Telefone do responsável</label>
-              <input id="telefone_responsavel" name="telefone_responsavel" {...register('telefone_responsavel')} className="input" />
+              <input id="telefone_responsavel" {...register('telefone_responsavel')} className="input" />
             </div>
             <div className="flex items-center gap-2 mt-4">
               <button type="submit" disabled={isSubmitting} className="btn btn-primary">{editing ? 'Salvar' : 'Criar'}</button>
