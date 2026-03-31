@@ -31,13 +31,18 @@ export default function Modalidades() {
     resolver: zodResolver(criarModalidadeSchema),
   });
 
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
   const abrirModalCriar = () => {
+    setApiError(null);
     reset({ nome: '', descricao: '' });
     setModalidadeEditando(null);
     setModalAberto(true);
   };
 
   const abrirModalEditar = (modalidade: Modalidade) => {
+    setApiError(null);
     reset({ nome: modalidade.nome, descricao: modalidade.descricao || '' });
     setModalidadeEditando(modalidade);
     setModalAberto(true);
@@ -50,24 +55,40 @@ export default function Modalidades() {
   };
 
   const onSubmit = async (dados: CriarModalidadeFormData) => {
+    setApiError(null);
+    // normalize descricao: never send null, send undefined when empty
+    const payload = {
+      nome: dados.nome.trim(),
+      ...(dados.descricao && dados.descricao.trim() !== '' ? { descricao: dados.descricao.trim() } : {}),
+    } as const;
+
     try {
       if (modalidadeEditando) {
-        await atualizarMutation.mutateAsync({
-          id: modalidadeEditando.id,
-          dados,
-        });
+        await atualizarMutation.mutateAsync({ id: modalidadeEditando.id, dados: payload });
       } else {
-        await criarMutation.mutateAsync(dados);
+        await criarMutation.mutateAsync(payload);
       }
       fecharModal();
-    } catch (err) {
-      console.error('Erro ao salvar modalidade:', err);
+    } catch (err: any) {
+      // extract message from backend shape
+      const msg = err?.response?.data?.erro?.mensagem || err?.response?.data?.dados?.mensagem || err?.message || 'Erro ao salvar modalidade';
+      setApiError(String(msg));
     }
   };
 
   const handleDesativar = async (id: number) => {
-    if (confirm('Deseja desativar esta modalidade?')) {
-      await desativarMutation.mutateAsync(id);
+    const item = data?.dados.find((m) => m.id === id);
+    const nome = item?.nome || '';
+    if (!confirm(`Tem certeza que deseja desativar a modalidade "${nome}"? Esta ação pode ser revertida.`)) return;
+
+    try {
+      const res: any = await desativarMutation.mutateAsync(id);
+      const msg = res?.dados?.mensagem || res?.mensagem || 'Modalidade desativada com sucesso';
+      setFeedbackMessage(String(msg));
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    } catch (err: any) {
+      const msg = err?.response?.data?.erro?.mensagem || err?.message || 'Erro ao desativar modalidade';
+      setApiError(String(msg));
     }
   };
 
@@ -208,6 +229,11 @@ export default function Modalidades() {
             <h2 className="text-xl font-bold mb-4">
               {modalidadeEditando ? 'Editar Modalidade' : 'Nova Modalidade'}
             </h2>
+            {apiError && (
+              <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
+                <p className="text-red-800 text-sm">{apiError}</p>
+              </div>
+            )}
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="mb-4">
                 <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
@@ -256,6 +282,12 @@ export default function Modalidades() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {feedbackMessage && (
+        <div className="fixed top-4 right-4 bg-green-50 border border-green-200 text-green-800 rounded px-4 py-2 z-50">
+          {feedbackMessage}
         </div>
       )}
     </div>

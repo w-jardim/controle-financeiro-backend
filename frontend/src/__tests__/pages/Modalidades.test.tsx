@@ -136,8 +136,39 @@ describe('Modalidades', () => {
     await waitFor(() => {
       expect(modalidadesService.criarModalidadeApi).toHaveBeenCalledWith({
         nome: 'Nova Modalidade Teste',
-        descricao: '',
       });
+    });
+  });
+
+  it('exibe erro de duplicidade ao criar', async () => {
+    vi.mocked(modalidadesService.listarModalidadesApi).mockResolvedValue({
+      pagina: 1,
+      limite: 10,
+      total: 0,
+      totalPaginas: 0,
+      dados: [],
+    });
+
+    const backendErr = {
+      response: { data: { erro: { mensagem: 'Já existe modalidade com mesmo nome nesta conta' } } },
+    } as any;
+
+    vi.mocked(modalidadesService.criarModalidadeApi).mockRejectedValue(backendErr);
+
+    const user = userEvent.setup();
+    render(<Modalidades />, { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(screen.getByText('Nova Modalidade')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Nova Modalidade'));
+    const inputNome = screen.getByLabelText(/Nome/i);
+    await user.type(inputNome, 'Duplicada');
+    await user.click(screen.getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Já existe modalidade com mesmo nome nesta conta')).toBeInTheDocument();
     });
   });
 
