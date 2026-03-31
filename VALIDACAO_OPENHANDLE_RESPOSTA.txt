@@ -1,0 +1,83 @@
+Resumo das mudanças (superfície mínima)
+
+- Arquivos ajustados:
+  - tests/integration/fase4-encerramento.spec.js — removi app.listen(0), tracking/destroy de sockets e teardown local; use request(app) direto.
+  - tests/setup/jest.setup.js — removi o process.on('beforeExit', ...) e adicionei afterAll(async () => await pool.end()) centralizando o fechamento do pool.
+  - jest.config.js — removi globalTeardown (agora o teardown está no setupFilesAfterEnv).
+  - Removido: tests/setup/globalTeardown.js (ex-globalTeardown deletado).
+
+- Auditoria /ready: confirmado — usa conexao.query('SELECT 1') (pool.query) — não usa getConnection(), portanto não requer release manual.
+
+Patch final (aplicado)
+- Reverter teste para usar request(app) e remover lógica de sockets/servidor.
+- Centralizar pool.end() em tests/setup/jest.setup.js via afterAll.
+- Remover globalTeardown do jest.config.js e deletar tests/setup/globalTeardown.js.
+
+Comandos executados e saídas reais (copiadas do terminal)
+
+1) Teste isolado com detectOpenHandles:
+npx jest tests/integration/fase4-encerramento.spec.js --runInBand --detectOpenHandles
+
+Saída (resumida):
+ PASS  tests/integration/fase4-encerramento.spec.js
+  Fase 4 — Encerramento Técnico
+    .env.example
+      √ arquivo .env.example existe (3 ms)
+      √ DB_HOST está documentada no .env.example (1 ms)
+      √ DB_PORT está documentada no .env.example (1 ms)
+      √ DB_USER está documentada no .env.example (1 ms)
+      √ DB_PASSWORD está documentada no .env.example (1 ms)
+      √ DB_NAME está documentada no .env.example
+      √ JWT_SECRET está documentada no .env.example (1 ms)
+      √ JWT_EXPIRES_IN está documentada no .env.example (1 ms)
+      √ PORT está documentada no .env.example
+      √ NODE_ENV está documentada no .env.example (1 ms)
+      √ LOG_LEVEL está documentada no .env.example (1 ms)
+      √ CORS_ORIGIN está documentada no .env.example (1 ms)
+    GET /ready
+      √ retorna 200 ou 503 com estrutura correta (95 ms)
+      √ retorna X-Request-Id (14 ms)
+    GET /
+      √ retorna versão, ambiente e endpoints essenciais (10 ms)
+    Rotas de saúde coerentes
+      √ GET /saude → 200 (10 ms)
+      √ GET /ping → 200 (10 ms)
+      √ GET /docs.json → spec OpenAPI válida (12 ms)
+    validarEnv
+      √ lança erro quando falta variável obrigatória (17 ms)
+      √ não lança erro quando todas as variáveis estão presentes (9 ms)
+    CORS
+      √ inclui X-Request-Id nos headers permitidos (11 ms)
+    Quality gate
+      √ .eslintrc.js existe (1 ms)
+      √ package.json tem script lint (1 ms)
+
+Test Suites: 1 passed, 1 total  
+Tests:       23 passed, 23 total
+
+2) Suite completa (silencioso):
+npm test --silent
+
+Saída (resumida):
+ PASS  tests/integration/profissionais.spec.js (27.933 s)
+ PASS  tests/integration/cts.spec.js (19.312 s)
+ PASS  tests/integration/modalidades.spec.js (18.04 s)
+ PASS  tests/integration/agendamentos.spec.js (15.271 s)
+ PASS  tests/integration/mensalidades.spec.js (17.523 s)
+ PASS  tests/integration/alunos.spec.js (15.322 s)
+ PASS  tests/integration/horarios-aula.spec.js (11.753 s)
+ PASS  tests/integration/presencas.spec.js (14.074 s)
+ PASS  tests/integration/transacoes.spec.js (15.642 s)
+ PASS  tests/integration/fase3-infra.spec.js (10.803 s)
+ PASS  tests/integration/auth.spec.js (9.711 s)
+ PASS  tests/integration/fase4-encerramento.spec.js
+ PASS  tests/integration/saude.spec.js
+
+Test Suites: 13 passed, 13 total  
+Tests:       117 passed, 117 total
+
+Status final
+- Resultado: resolvido — após reduzir a superfície e centralizar o teardown, o --detectOpenHandles não reportou o TCPWRAP nas execuções solicitadas (teste isolado e suite completa).
+
+Próximo passo opcional
+- Posso commitar as mudanças em um branch e gerar um diff/patch consolidado (ou reverter alterações). Deseja que eu crie um commit e tagueie essas alterações?

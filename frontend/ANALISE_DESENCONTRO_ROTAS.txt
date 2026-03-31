@@ -1,0 +1,198 @@
+ANÁLISE DE DESENCONTRO FRONTEND-BACKEND
+=========================================
+
+DATA: 31 de março de 2026
+PROBLEMA: Frontend recebe 404 ao chamar POST /api/auth/cadastro
+
+=========================================
+1. PREFIXO REAL DAS ROTAS AUTH NO BACKEND
+=========================================
+
+Arquivo: backend/src/modules/auth/module.js
+Código:
+```javascript
+function registrarRotasAuth(app) {
+  app.use('/auth', authRoutes);
+}
+```
+
+✅ PREFIXO CONFIRMADO: /auth (SEM /api)
+
+=========================================
+2. ROTAS AUTH MONTADAS NO BACKEND
+=========================================
+
+Arquivo: backend/src/modules/auth/routes/authRoutes.js
+Código:
+```javascript
+router.post('/cadastro', validate(cadastroSchema), cadastrar);
+router.post('/login', validate(loginSchema), login);
+```
+
+✅ ROTAS REAIS:
+- POST /auth/cadastro
+- POST /auth/login
+
+❌ NÃO EXISTE: /api/auth/cadastro
+❌ NÃO EXISTE: /api/auth/login
+
+=========================================
+3. STATUS DO /docs NO BACKEND
+=========================================
+
+Arquivo: backend/src/shared/docs/swagger.js
+Código:
+```javascript
+function setupSwagger(app) {
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customSiteTitle: 'Controlador Financeiro — API Docs',
+    customCss: '.swagger-ui .topbar { display: none }'
+  }));
+
+  app.get('/docs.json', (_req, res) => {
+    res.json(swaggerDocument);
+  });
+}
+```
+
+Arquivo: backend/src/app.js (linha 42)
+```javascript
+setupSwagger(app);
+```
+
+✅ /docs ESTÁ MONTADO NO CÓDIGO
+✅ /docs.json ESTÁ MONTADO NO CÓDIGO
+✅ swagger-ui-express instalado (package.json linha 24)
+✅ openapi.yaml existe em backend/src/shared/docs/openapi.yaml
+
+Se /docs responde 404, pode ser:
+- Servidor não reiniciado após alteração
+- Erro ao carregar openapi.yaml
+- Middleware bloqueando antes do setup
+
+=========================================
+4. PROBLEMA IDENTIFICADO NO FRONTEND
+=========================================
+
+Arquivo: frontend/.env
+```
+VITE_API_URL=http://localhost:3000/api
+                                    ^^^ PROBLEMA AQUI
+```
+
+Arquivo: frontend/src/services/api/axios.ts
+```javascript
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+});
+```
+
+Arquivo: frontend/src/services/api/authService.ts
+```javascript
+export async function loginApi(email: string, senha: string): Promise<string> {
+  const response = await api.post<LoginResponse>('/auth/login', { email, senha });
+  return response.data.dados.token;
+}
+
+export async function registerApi(data: RegisterData): Promise<void> {
+  await api.post<RegisterResponse>('/auth/cadastro', data);
+}
+```
+
+RESULTADO DA CHAMADA:
+- Frontend chama: POST /auth/cadastro
+- Axios usa baseURL: http://localhost:3000/api
+- URL FINAL: http://localhost:3000/api/auth/cadastro ❌
+- Backend espera: http://localhost:3000/auth/cadastro ✅
+
+=========================================
+5. RESPOSTA OBJETIVA
+=========================================
+
+ROTA REAL DE CADASTRO NO BACKEND:
+✅ POST http://localhost:3000/auth/cadastro
+
+ROTA REAL DE LOGIN NO BACKEND:
+✅ POST http://localhost:3000/auth/login
+
+STATUS DO /docs:
+✅ Código está montado corretamente
+✅ Deveria responder em http://localhost:3000/docs
+❌ Se responde 404, verificar se backend foi reiniciado
+
+CORREÇÃO NECESSÁRIA:
+🔧 FRONTEND - Alterar frontend/.env
+
+ANTES:
+VITE_API_URL=http://localhost:3000/api
+
+DEPOIS:
+VITE_API_URL=http://localhost:3000
+
+JUSTIFICATIVA:
+O backend NÃO usa prefixo /api nas rotas.
+As rotas são montadas diretamente:
+- /auth/cadastro
+- /auth/login
+- /transacoes
+- /cts
+- /profissionais
+- etc.
+
+=========================================
+6. AÇÃO CORRETIVA IMEDIATA
+=========================================
+
+1. Editar frontend/.env:
+   VITE_API_URL=http://localhost:3000
+
+2. Reiniciar frontend:
+   cd frontend
+   npm run dev
+
+3. Testar cadastro:
+   - Acessar http://localhost:5173/register
+   - Preencher formulário
+   - Verificar network: POST http://localhost:3000/auth/cadastro
+
+4. Testar login:
+   - Acessar http://localhost:5173/login
+   - Preencher formulário
+   - Verificar network: POST http://localhost:3000/auth/login
+
+=========================================
+7. VALIDAÇÃO DO BACKEND
+=========================================
+
+Se quiser confirmar as rotas do backend em execução:
+
+curl http://localhost:3000/saude
+→ Deve retornar 200 {"status":"ok",...}
+
+curl http://localhost:3000/docs
+→ Deve retornar HTML do Swagger UI
+
+curl -X POST http://localhost:3000/auth/cadastro \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","senha":"123456","nomeResponsavel":"Test","nomeConta":"Test CT"}'
+→ Deve retornar 201 ou erro de validação (não 404)
+
+=========================================
+8. CONCLUSÃO
+=========================================
+
+❌ DESENCONTRO CONFIRMADO:
+- Frontend está adicionando /api antes das rotas
+- Backend não usa prefixo /api
+
+✅ SOLUÇÃO:
+- Remover /api do VITE_API_URL no frontend/.env
+
+✅ BACKEND CORRETO:
+- Rotas montadas corretamente
+- /auth/cadastro existe
+- /auth/login existe
+- /docs está configurado (verificar se servidor foi reiniciado)
+
+ANÁLISE CONCLUÍDA EM: 31/03/2026
+ANALISTA: GitHub Copilot

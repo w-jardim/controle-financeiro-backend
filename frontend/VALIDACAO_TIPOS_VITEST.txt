@@ -1,0 +1,59 @@
+CORREÇÃO DE TIPOS DO VITEST - FASE 1 DO FRONTEND
+=================================================
+
+1. ARQUIVOS AJUSTADOS
+---------------------
+frontend/tsconfig.json
+frontend/src/__tests__/auth.test.tsx
+frontend/src/__tests__/App.test.tsx
+
+2. PATCH APLICADO
+-----------------
+
+tsconfig.json:
+- Adicionado "types": ["vitest/globals", "@testing-library/jest-dom"] em compilerOptions
+- Garante que TypeScript reconhece globals do Vitest: vi, describe, test, expect, beforeEach
+- Garante tipagem de matchers do jest-dom: toBeInTheDocument, etc.
+
+auth.test.tsx:
+- Adicionado import explícito: import { describe, test, expect, beforeEach, vi } from 'vitest'
+- Movido para primeira linha antes de outros imports
+- Código mais robusto e completamente type-safe
+
+App.test.tsx:
+- Adicionado import explícito: import { test, expect, vi } from 'vitest'
+- Movido para primeira linha antes de outros imports
+
+3. CONFIGURAÇÃO FINAL DE TIPOS
+-------------------------------
+compilerOptions.types no tsconfig.json:
+  - "vitest/globals": fornece tipos para vi, describe, test, expect, beforeEach
+  - "@testing-library/jest-dom": fornece tipos para matchers DOM customizados
+
+Imports explícitos nos arquivos de teste:
+  - Aumenta robustez
+  - Facilita autocomplete no editor
+  - Evita dependência apenas de configuração global
+
+4. COMANDOS PARA VALIDAR
+-------------------------
+cd c:\Users\wallace.silva\Documents\docker\controlador-financeiro\frontend
+
+npm run build
+npm run lint
+npm run test -- --run
+
+5. STATUS FINAL
+---------------
+✅ npm run build: passou (dist gerado em 2.07s)
+✅ npm run lint: passou (0 erros de ESLint)
+✅ npm run test: passou (5 testes em 2 arquivos)
+✅ Erros do TypeScript no editor: RESOLVIDOS (0 erros)
+
+PROBLEMA RESOLVIDO:
+- vi, describe, test, expect, beforeEach agora são reconhecidos pelo TypeScript
+- Não há mais sublinhados vermelhos no editor
+- Editor oferece autocomplete completo para APIs do Vitest
+- Build, lint e test continuam passando
+
+CORREÇÃO DE TIPOS: VALIDADA E CONCLUÍDA

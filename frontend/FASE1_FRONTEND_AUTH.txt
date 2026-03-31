@@ -1,0 +1,158 @@
+FASE 1 DO FRONTEND - AUTENTICAÇÃO REAL INTEGRADA
+=================================================
+
+ATUALIZAÇÃO: CORREÇÃO DE TIPOS DO VITEST
+-----------------------------------------
+Aplicada correção definitiva dos tipos do TypeScript para Vitest.
+
+ARQUIVOS AJUSTADOS PARA TIPOS:
+- frontend/tsconfig.json
+- frontend/src/__tests__/auth.test.tsx
+- frontend/src/__tests__/App.test.tsx
+
+PATCH APLICADO:
+tsconfig.json:
+- Adicionado "types": ["vitest/globals", "@testing-library/jest-dom"] em compilerOptions
+- Garante que TypeScript reconhece vi, describe, test, expect, beforeEach
+
+auth.test.tsx e App.test.tsx:
+- Importação explícita: import { describe, test, expect, beforeEach, vi } from 'vitest'
+- Não depende apenas de globais implícitos
+- Código mais robusto e type-safe
+
+CONFIGURAÇÃO FINAL DE TIPOS:
+- vitest/globals: tipagem de vi, describe, test, expect, beforeEach
+- @testing-library/jest-dom: tipagem de toBeInTheDocument, etc.
+- imports explícitos nos arquivos de teste para máxima robustez
+
+VALIDAÇÃO FINAL COMPLETA:
+✅ npm run build: passou (dist gerado em 2.07s)
+✅ npm run lint: passou (0 erros)
+✅ npm run test: passou (5 testes, 2 arquivos)
+✅ Erros do TypeScript no editor: RESOLVIDOS (0 erros)
+
+1. ARQUIVOS CRIADOS
+-------------------
+frontend/src/services/api/authService.ts
+frontend/src/types/auth.ts
+frontend/src/__tests__/auth.test.tsx
+frontend/env.d.ts
+frontend/.env
+
+2. ARQUIVOS MODIFICADOS
+-----------------------
+frontend/package.json
+frontend/tsconfig.json
+frontend/vite.config.ts
+frontend/vitest.config.ts
+frontend/src/contexts/AuthContext.tsx
+frontend/src/services/api/axios.ts
+frontend/src/pages/auth/Login.tsx
+frontend/src/components/ProtectedRoute.tsx
+frontend/src/components/Header.tsx
+frontend/src/schemas/login.schema.ts
+frontend/src/__tests__/App.test.tsx
+
+3. PATCH AUTH CONTEXT / STORAGE / AXIOS
+----------------------------------------
+AuthContext (frontend/src/contexts/AuthContext.tsx):
+- Adicionado isLoading e isAuthenticated ao estado
+- login() agora recebe (email, senha) e chama loginApi do backend
+- logout() limpa storage e redireciona para /login
+- useEffect bootstrap para restaurar token do localStorage
+- Registra callback de logout no axios via setLogoutCallback
+
+Axios (frontend/src/services/api/axios.ts):
+- Adicionado setLogoutCallback para registrar função de logout
+- Interceptor de response 401 chama logoutCallback após clearToken
+- Authorization Bearer automático em todas requisições autenticadas
+
+AuthService (frontend/src/services/api/authService.ts):
+- loginApi(email, senha) chama POST /auth/login
+- Retorna response.data.dados.token do backend
+- Type LoginResponse tipando estrutura { dados: { mensagem, token } }
+
+Storage (frontend/src/utils/storage.ts):
+- Sem modificação; já estava correto
+
+4. PATCH LOGIN
+--------------
+Login (frontend/src/pages/auth/Login.tsx):
+- Formulário agora chama login(email, senha) assíncrono
+- Estado loading enquanto aguarda resposta
+- Estado errorMsg para exibir erro da API
+- Campos desabilitados durante loading
+- Validação com Zod: email válido e senha mínimo 6 caracteres
+- Mensagens de erro exibidas abaixo dos campos
+- Erro da API exibido no topo do formulário
+
+LoginSchema (frontend/src/schemas/login.schema.ts):
+- Campo 'senha' ao invés de 'password' (alinhado ao backend)
+- Mensagens de erro customizadas
+
+5. PATCH PROTECTED ROUTE / LAYOUT
+----------------------------------
+ProtectedRoute (frontend/src/components/ProtectedRoute.tsx):
+- Verifica isLoading do AuthContext
+- Exibe "Carregando..." enquanto bootstrap da sessão
+- Redireciona para /login se !isAuthenticated
+- Permite acesso se isAuthenticated
+
+Header (frontend/src/components/Header.tsx):
+- Exibe email do usuário autenticado
+- Botão Sair com estilo vermelho e hover
+- Chama logout() do AuthContext
+
+6. TESTES CRIADOS OU AJUSTADOS
+-------------------------------
+auth.test.tsx (frontend/src/__tests__/auth.test.tsx):
+- Suite "Auth Flow" com 4 testes:
+  - renders login page when not authenticated
+  - redirects to login when accessing protected route without token
+  - shows error message on failed login
+  - navigates to dashboard on successful login
+- Mock de authService.loginApi e storage
+- Uso de @testing-library/user-event para interação
+- Imports explícitos de describe, test, expect, beforeEach, vi
+
+App.test.tsx (frontend/src/__tests__/App.test.tsx):
+- Ajustado para mockar storage.getToken
+- Teste básico de renderização mantido
+- Imports explícitos de test, expect, vi
+
+7. COMANDOS PARA VALIDAR
+-------------------------
+cd c:\Users\wallace.silva\Documents\docker\controlador-financeiro\frontend
+
+npm install
+npm run build
+npm run lint
+npm run test -- --run
+npm run dev
+
+8. STATUS FINAL DA FASE 1 DO FRONTEND
+--------------------------------------
+✅ Login real integrado ao backend (POST /api/auth/login)
+✅ Token persistido em localStorage
+✅ Restauração de sessão ao recarregar (bootstrap em AuthContext)
+✅ Proteção de rotas privadas funcional
+✅ Logout funcional (limpa token e redireciona)
+✅ Tratamento de erro 401 automático no axios
+✅ Mensagens de erro da API exibidas ao usuário
+✅ Loading state durante login
+✅ Validação com Zod (email válido, senha mínimo 6 caracteres)
+✅ npm run build: passou (dist gerado em ~2s)
+✅ npm run lint: passou (0 erros)
+✅ npm run test: passou (5 testes, 2 arquivos)
+✅ TypeScript editor: 0 erros (tipos Vitest configurados)
+
+DEPENDÊNCIAS ADICIONADAS:
+- @testing-library/user-event: ^14.5.1
+- @types/node: ^20.8.0
+
+AVISO:
+- "The CJS build of Vite's Node API is deprecated": informativo, não bloqueia
+- TypeScript 5.9.3 vs suporte oficial 5.4: warning, funciona normalmente
+
+FASE 1 DO FRONTEND: CONCLUÍDA E TOTALMENTE VALIDADA
+

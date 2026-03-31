@@ -1,0 +1,105 @@
+# FASE 2 DO FRONTEND - MÓDULO MODALIDADES
+**Status:** CONCLUÍDO ✅
+**Data:** 31/03/2026
+**Duração:** ~45min
+
+## SUMÁRIO EXECUTIVO
+Implementação completa do módulo Modalidades com CRUD funcional, testes automatizados e integração com backend.
+
+## ENTREGAS REALIZADAS
+
+### 1. ARQUITETURA E TIPOS
+- **frontend/src/types/modalidade.ts**
+  - Interface `Modalidade` com todos campos (id, nome, descricao, ativo, timestamps)
+  - Interface `ListaModalidadesResponse` com paginação (pagina, limite, total, totalPaginas, dados)
+  - Interface `CriarModalidadePayload` (nome required, descricao optional)
+  - Interface `AtualizarModalidadePayload` (todos opcionais)
+  - Interface `ModalidadeResponse` para respostas de mutações
+
+- **frontend/src/schemas/modalidade.schema.ts**
+  - Schema Zod `criarModalidadeSchema` validando nome required e descricao optional
+  - Schema Zod `atualizarModalidadeSchema` com campos opcionais
+  - Types exportados para formulários
+
+### 2. CAMADA DE SERVIÇO (API)
+- **frontend/src/services/api/modalidadesService.ts**
+  - `listarModalidadesApi(page, limit)` → GET /modalidades com paginação
+  - `buscarModalidadePorIdApi(id)` → GET /modalidades/:id
+  - `criarModalidadeApi(dados)` → POST /modalidades
+  - `atualizarModalidadeApi(id, dados)` → PUT /modalidades/:id
+  - `desativarModalidadeApi(id)` → PATCH /modalidades/:id/desativar
+  - `ativarModalidadeApi(id)` → PATCH /modalidades/:id/ativar
+  - Import correto de `./axios` (api configurado com interceptor de token)
+
+### 3. REACT QUERY HOOKS
+- **frontend/src/hooks/useModalidades.ts**
+  - `useModalidades(page, limit)` → query com cache e refetch automático
+  - `useModalidade(id)` → query por ID individual com enabled condicional
+  - `useCriarModalidade()` → mutation com invalidação de cache
+  - `useAtualizarModalidade()` → mutation com invalidação de cache específico
+  - `useDesativarModalidade()` → mutation com invalidação de cache
+  - `useAtivarModalidade()` → mutation com invalidação de cache
+  - QueryClient invalidation estratégica após mutações
+
+### 4. UI COMPLETA
+- **frontend/src/pages/modalidades/Modalidades.tsx**
+  - **Lista:** Tabela com colunas Nome, Descrição, Status, Ações
+  - **Paginação:** Navegação anterior/próxima com contador de páginas
+  - **Estados:** Loading, erro, lista vazia
+  - **Modal CRUD:** Formulário reutilizável para criar/editar
+  - **Validação:** React Hook Form + Zod com mensagens customizadas
+  - **Ações:** Editar, Ativar/Desativar com confirmação
+  - **UX:** Feedback de loading em botões, disabled states
+  - **Acessibilidade:** Labels com htmlFor/id, foco adequado
+
+### 5. TESTES AUTOMATIZADOS
+- **frontend/src/__tests__/pages/Modalidades.test.tsx**
+  - ✅ Teste: Renderizar lista vazia
+  - ✅ Teste: Renderizar lista com dados (2 modalidades)
+  - ✅ Teste: Abrir modal de criação
+  - ✅ Teste: Criar nova modalidade (mock de API)
+  - ✅ Teste: Exibir erro ao carregar
+  - QueryClient com retry: false para testes
+  - Wrapper com displayName corrigido
+  - Mocks de modalidadesService
+
+### 6. VALIDAÇÕES TÉCNICAS
+- ✅ **Lint:** ESLint passou sem erros (warnings de TypeScript version apenas)
+- ✅ **Testes:** 10/10 passing (3 test files, 10 tests total)
+- ✅ **Build:** Vite build concluído com sucesso (168 modules, 340KB JS gzipped 106KB)
+
+## CORREÇÕES DURANTE IMPLEMENTAÇÃO
+1. **Import do Axios:** Corrigido de `./axiosConfig` para `./axios`
+2. **Teste com label:** Adicionado `htmlFor` e `id` nos inputs para acessibilidade e testes
+3. **Wrapper displayName:** Corrigido componente de teste para evitar erro de ESLint
+
+## CONTRATO BACKEND VALIDADO
+- GET /modalidades → Lista paginada (query: page, limit)
+- GET /modalidades/:id → Modalidade individual
+- POST /modalidades → Criar (body: nome required, descricao optional)
+- PUT /modalidades/:id → Atualizar (body: nome?, descricao?, ativo?)
+- PATCH /modalidades/:id/desativar → Desativar
+- PATCH /modalidades/:id/ativar → Ativar
+
+## STACK TÉCNICA UTILIZADA
+- React 18.2 + TypeScript 5.4
+- TanStack Query 5.7 (react-query)
+- React Hook Form 7.52 + Zod 3.23
+- Axios 1.5 com Bearer token interceptor
+- Vitest 1.4 + React Testing Library 15.0
+- Vite 5.4 build
+
+## PRÓXIMOS PASSOS SUGERIDOS
+1. Validação manual em UI: criar, editar, listar, ativar/desativar modalidades
+2. Teste de paginação com mais de 10 registros
+3. Implementar próximo módulo (Profissionais, Agentes, Clientes, etc.)
+
+## ARQUIVOS CRIADOS/MODIFICADOS
+✅ frontend/src/types/modalidade.ts (CRIADO)
+✅ frontend/src/schemas/modalidade.schema.ts (CRIADO)
+✅ frontend/src/services/api/modalidadesService.ts (CRIADO)
+✅ frontend/src/hooks/useModalidades.ts (CRIADO)
+✅ frontend/src/pages/modalidades/Modalidades.tsx (MODIFICADO - implementado completo)
+✅ frontend/src/__tests__/pages/Modalidades.test.tsx (CRIADO)
+
+**FASE 2 CONCLUÍDA COM SUCESSO - PRONTO PARA VALIDAÇÃO MANUAL**

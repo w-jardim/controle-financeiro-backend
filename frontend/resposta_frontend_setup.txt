@@ -1,0 +1,54 @@
+BOOTSTRAP DO FRONTEND - VALIDAÇÃO FINAL
+========================================
+
+1. PROBLEMA IDENTIFICADO
+-------------------------
+- `@hookform/resolvers` ausente no package.json mas importado em src/pages/auth/Login.tsx
+- `@typescript-eslint/parser` e `@typescript-eslint/eslint-plugin` ausentes mas referenciados no .eslintrc.cjs
+- `eslint-plugin-vitest-globals` ausente para suporte a globals de teste
+- `jsdom` ausente para environment de teste (Vitest instalou automaticamente)
+- Variável `formState` sem uso em Login.tsx
+- Teste usando `getByText(/Entrar/i)` falhava por múltiplos elementos
+
+2. package.json CORRIGIDO
+--------------------------
+Adicionado às dependências:
+  "@hookform/resolvers": "^3.3.2"
+
+Adicionado às devDependencies:
+  "@typescript-eslint/eslint-plugin": "^6.7.0"
+  "@typescript-eslint/parser": "^6.7.0"
+  "@eslint-plugin-vitest-globals": "^1.4.0"
+
+3. ARQUIVO(S) AJUSTADO(S)
+--------------------------
+- frontend/package.json: dependências corrigidas
+- frontend/.eslintrc.cjs: adicionado suporte a vitest-globals, regra @typescript-eslint/no-unused-vars com argsIgnorePattern
+- frontend/src/contexts/AuthContext.tsx: parâmetros de type e default usam underscore prefix
+- frontend/src/pages/auth/Login.tsx: removido formState não usado
+- frontend/src/__tests__/App.test.tsx: alterado para getByRole('button') ao invés de getByText
+
+4. COMANDOS PARA VALIDAR
+--------------------------
+cd c:\Users\wallace.silva\Documents\docker\controlador-financeiro\frontend
+
+npm install
+npm run build
+npm run lint
+npm run test -- --run
+npm run dev
+
+5. STATUS FINAL
+----------------
+✅ npm install: passou (492 pacotes)
+✅ npm run build: passou (dist gerado em ~1.9s)
+✅ npm run lint: passou (0 erros)
+✅ npm run test: passou (1 teste OK)
+✅ npm run dev: servidor subiu em http://localhost:5173/
+
+AVISO INFORMATIVO (não bloqueia execução):
+- "The CJS build of Vite's Node API is deprecated" → aviso interno do Node/Vite, não afeta build/dev/test
+- TypeScript 5.9.3 vs suporte oficial 5.4: warning mas funciona normalmente
+
+BOOTSTRAP DO FRONTEND: VALIDADO E FUNCIONAL
+

@@ -28,14 +28,13 @@ class AuthService {
       throw new AppError('Nome da conta é obrigatório', 400);
     }
 
-    if (!tipoAccount) {
-      throw new AppError('Tipo de conta é obrigatório', 400);
-    }
+    // tipoAccount é opcional, terá fallback para 'ct_owner'
+    if (tipoAccount) {
+      const tiposValidos = ['ct_owner', 'profissional_autonomo'];
 
-    const tiposValidos = ['ct_owner', 'profissional_autonomo'];
-
-    if (!tiposValidos.includes(tipoAccount)) {
-      throw new AppError('Tipo de conta inválido', 400);
+      if (!tiposValidos.includes(tipoAccount)) {
+        throw new AppError('Tipo de conta inválido', 400);
+      }
     }
 
     if (senha.length < 6) {
@@ -69,6 +68,9 @@ class AuthService {
       tipoAccount
     });
 
+    // Fallback: se tipoAccount não fornecido, usar 'ct_owner'
+    const tipoFinal = tipoAccount || 'ct_owner';
+
     const usuarioExistente = await authRepository.buscarUsuarioPorEmail(email);
 
     if (usuarioExistente) {
@@ -84,7 +86,7 @@ class AuthService {
       const accountId = await authRepository.criarAccount(
         {
           nome: nomeAccount.trim(),
-          tipo: tipoAccount,
+          tipo: tipoFinal,
           plano: 'basic',
           status: 'ativo'
         },
@@ -111,7 +113,7 @@ class AuthService {
 
       let ctId = null;
 
-      if (tipoAccount === 'ct_owner' && nomeCtInicial && nomeCtInicial.trim()) {
+      if (tipoFinal === 'ct_owner' && nomeCtInicial && nomeCtInicial.trim()) {
         ctId = await authRepository.criarCtInicial(
           {
             accountId,
