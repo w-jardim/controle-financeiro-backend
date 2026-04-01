@@ -62,8 +62,13 @@ describe('Alunos', () => {
     await waitFor(() => expect(screen.getByText('Novo Aluno')).toBeInTheDocument());
     await user.click(screen.getByText('Novo Aluno'));
 
-    // No CT input should be visible because only one CT exists
-    expect(screen.queryByLabelText(/CT ID/i)).toBeNull();
+    // CT select must be visible and show the CT name when only one CT exists
+    const ctSelect = screen.getByLabelText('Centro de Treinamento') as HTMLSelectElement;
+    expect(ctSelect).toBeInTheDocument();
+    // the single CT should appear as an option
+    expect(screen.getByRole('option', { name: 'CT 1' })).toBeInTheDocument();
+    // it may be preselected as value
+    expect(ctSelect.value).toBe('1');
 
     const inputNome = screen.getByLabelText('Nome') as HTMLInputElement;
     fireEvent.change(inputNome, { target: { value: 'Novo' } });

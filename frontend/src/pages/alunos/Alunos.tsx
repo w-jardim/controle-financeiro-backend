@@ -112,11 +112,11 @@ const Alunos: React.FC = () => {
                 <td className="px-4 py-2">{a.ativo ? 'Ativo' : 'Inativo'}</td>
                 <td className="px-4 py-2">
                   <button onClick={() => handleEdit(a.id)} className="btn btn-secondary mr-2">Editar</button>
-                  {a.ativo ? (
-                    <button onClick={() => { if (global.confirm?.('Confirma desativar?')) desativar.mutate(a.id); }} className="btn btn-danger">Desativar</button>
-                  ) : (
-                    <button onClick={() => { if (global.confirm?.('Confirma ativar?')) ativar.mutate(a.id); }} className="btn btn-success">Ativar</button>
-                  )}
+                    {a.ativo ? (
+                      <button onClick={() => { if (confirm('Confirma desativar?')) desativar.mutate(a.id); }} className="btn btn-danger">Desativar</button>
+                    ) : (
+                      <button onClick={() => { if (confirm('Confirma ativar?')) ativar.mutate(a.id); }} className="btn btn-success">Ativar</button>
+                    )}
                 </td>
               </tr>
             ))}
@@ -127,18 +127,32 @@ const Alunos: React.FC = () => {
       {showForm && (
         <div className="mt-4 p-4 border rounded bg-gray-50">
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* CT is resolved automatically. If multiple CTs exist, show friendly selector. */}
-            {cts.length > 1 && (
-              <div className="mb-2">
-                <label className="block" htmlFor="ct_select">Centro de Treinamento</label>
-                <select id="ct_select" className="input" value={selectedCtId ?? ''} onChange={(e) => setSelectedCtId(Number(e.target.value) || null)}>
-                  <option value="">Selecione</option>
-                  {cts.map((ct: any) => (
-                    <option key={ct.id} value={ct.id}>{ct.nome}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* CT selector: always show the select so user chooses by name. */}
+            <div className="mb-2">
+              <label className="block" htmlFor="ct_select">Centro de Treinamento</label>
+              <select
+                id="ct_select"
+                className="input"
+                value={selectedCtId ?? ''}
+                onChange={(e) => setSelectedCtId(Number(e.target.value) || null)}
+                aria-label="Centro de Treinamento"
+              >
+                {ctsLoading ? (
+                  <option value="">Carregando CTs...</option>
+                ) : cts.length === 0 ? (
+                  <>
+                    <option value="">Nenhum CT cadastrado</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="">Selecione um CT</option>
+                    {cts.map((ct: any) => (
+                      <option key={ct.id} value={ct.id}>{ct.nome}</option>
+                    ))}
+                  </>
+                )}
+              </select>
+            </div>
             <div className="mb-2">
               <label className="block" htmlFor="nome">Nome</label>
               <input id="nome" {...register('nome')} className="input" />
@@ -173,7 +187,11 @@ const Alunos: React.FC = () => {
               <input id="telefone_responsavel" {...register('telefone_responsavel')} className="input" />
             </div>
             <div className="flex items-center gap-2 mt-4">
-              <button type="submit" disabled={isSubmitting} className="btn btn-primary">{editing ? 'Salvar' : 'Criar'}</button>
+              <button
+                type="submit"
+                disabled={isSubmitting || (!ctsLoading && cts.length === 0)}
+                className="btn btn-primary"
+              >{editing ? 'Salvar' : 'Criar'}</button>
               <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn">Cancelar</button>
             </div>
           </form>

@@ -132,9 +132,9 @@ const Cts: React.FC = () => {
                 <td className="px-4 py-2">
                   <button className="btn btn-secondary mr-2" onClick={() => handleEdit(ct.id)}>Editar</button>
                   {ct.ativo ? (
-                    <button className="btn btn-danger" onClick={() => { if (global.confirm?.('Confirma desativar?')) desativarMut.mutate(ct.id); }}>Desativar</button>
+                    <button className="btn btn-danger" onClick={() => { if (confirm('Confirma desativar?')) desativarMut.mutate(ct.id); }}>Desativar</button>
                   ) : (
-                    <button className="btn btn-success" onClick={() => { if (global.confirm?.('Confirma ativar?')) ativarMut.mutate(ct.id); }}>Ativar</button>
+                    <button className="btn btn-success" onClick={() => { if (confirm('Confirma ativar?')) ativarMut.mutate(ct.id); }}>Ativar</button>
                   )}
                 </td>
               </tr>
