@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { getToken, clearToken } from '../../utils/storage';
 
-const baseURL = import.meta.env.VITE_API_URL ?? '';
+// Se `VITE_API_URL` não estiver definido em desenvolvimento, usar o prefixo `/api`
+// isso faz com que chamadas relativas sejam encaminhadas ao backend (ex: http://localhost:3000/api/... via proxy ou reverse)
+const baseURL = import.meta.env.VITE_API_URL ?? '/api';
 
 const api = axios.create({
   baseURL,

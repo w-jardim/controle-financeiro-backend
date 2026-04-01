@@ -113,41 +113,47 @@ app.get('/', (req, res) => {
 // Registro de Módulos
 // ============================================
 
-// Proteger apenas as rotas de transações com JWT
-app.use('/transacoes', authMiddleware);
+// Agrupar todas as rotas da API sob o prefixo /api
+const apiRouter = express.Router();
 
+// Proteger apenas as rotas de transações com JWT
+apiRouter.use('/transacoes', authMiddleware);
 
 // Proteger as rotas de CTs com JWT
-app.use('/cts', authMiddleware);
+apiRouter.use('/cts', authMiddleware);
 
 // Proteger as rotas de Profissionais com JWT
-app.use('/profissionais', authMiddleware);
+apiRouter.use('/profissionais', authMiddleware);
 
 // Proteger as rotas de Modalidades com JWT
-app.use('/modalidades', authMiddleware);
+apiRouter.use('/modalidades', authMiddleware);
 
 // Proteger as rotas de Horários de Aula com JWT
-app.use('/horarios-aula', authMiddleware);
+apiRouter.use('/horarios-aula', authMiddleware);
 
 // Proteger as rotas de Agendamentos com JWT
-app.use('/agendamentos', authMiddleware);
+apiRouter.use('/agendamentos', authMiddleware);
 
 // Proteger as rotas de Presenças com JWT
-app.use('/presencas', authMiddleware);
+apiRouter.use('/presencas', authMiddleware);
 
 // Proteger as rotas de Mensalidades com JWT
-app.use('/mensalidades', authMiddleware);
+apiRouter.use('/mensalidades', authMiddleware);
 
-registrarRotasTransacoes(app);
-registrarRotasAuth(app);
-registrarRotasCts(app);
-registrarRotasAlunos(app);
-registrarRotasProfissionais(app);
-registrarRotasModalidades(app);
-registrarRotasHorarios(app);
-registrarRotasAgendamentos(app);
-registrarRotasPresencas(app);
-registrarRotasMensalidades(app);
+// Registrar módulos na rota /api
+registrarRotasTransacoes(apiRouter);
+registrarRotasAuth(apiRouter);
+registrarRotasCts(apiRouter);
+registrarRotasAlunos(apiRouter);
+registrarRotasProfissionais(apiRouter);
+registrarRotasModalidades(apiRouter);
+registrarRotasHorarios(apiRouter);
+registrarRotasAgendamentos(apiRouter);
+registrarRotasPresencas(apiRouter);
+registrarRotasMensalidades(apiRouter);
+
+// Montar o router da API em /api
+app.use('/api', apiRouter);
 
 // ============================================
 // 404 - Rota Não Encontrada
