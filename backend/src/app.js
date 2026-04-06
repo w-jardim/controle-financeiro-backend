@@ -155,6 +155,10 @@ registrarRotasMensalidades(apiRouter);
 // Montar o router da API em /api
 app.use('/api', apiRouter);
 
+// Compatibilidade: expor rotas também no root (sem prefixo) para clientes legados
+// e para os testes que usam endpoints sem o prefixo `/api`.
+app.use('/', apiRouter);
+
 // ============================================
 // 404 - Rota Não Encontrada
 // ============================================

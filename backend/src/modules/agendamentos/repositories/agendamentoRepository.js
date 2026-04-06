@@ -38,11 +38,19 @@ class AgendamentoRepository {
     return Number(linhas[0].total);
   }
 
-  async criar({ accountId, alunoId, horarioAulaId, dataAula, status, observacao }, conn = null) {
+  async criar({ accountId, alunoId, horarioAulaId, agendaAulaId, dataAula, status, observacao }, conn = null) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
-    const sql = 'INSERT INTO agendamentos (account_id, aluno_id, horario_aula_id, data_aula, status, observacao, criado_em) VALUES (?, ?, ?, ?, ?, ?, NOW())';
-    const params = [accountId, alunoId, horarioAulaId, dataAula, status, observacao];
+    // Support dual-column insert: prefer agenda_aula_id when provided, otherwise use horario_aula_id
+    let sql;
+    let params;
+    if (agendaAulaId !== undefined && agendaAulaId !== null) {
+      sql = 'INSERT INTO agendamentos (account_id, aluno_id, agenda_aula_id, data_aula, status, observacao, criado_em) VALUES (?, ?, ?, ?, ?, ?, NOW())';
+      params = [accountId, alunoId, agendaAulaId, dataAula, status, observacao];
+    } else {
+      sql = 'INSERT INTO agendamentos (account_id, aluno_id, horario_aula_id, data_aula, status, observacao, criado_em) VALUES (?, ?, ?, ?, ?, ?, NOW())';
+      params = [accountId, alunoId, horarioAulaId, dataAula, status, observacao];
+    }
 
     try {
       const [resultado] = conn ? await conn.query(sql, params) : await conexao.query(sql, params);
@@ -53,6 +61,14 @@ class AgendamentoRepository {
       }
       throw error;
     }
+  }
+
+  async existeDuplicidadeAlunoAgenda(alunoId, agendaAulaId, dataAula, accountId, conn = null) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+    const sql = 'SELECT id FROM agendamentos WHERE account_id = ? AND aluno_id = ? AND agenda_aula_id = ? AND data_aula = ? LIMIT 1';
+    const params = [accountId, alunoId, agendaAulaId, dataAula];
+    const [linhas] = conn ? await conn.query(sql, params) : await conexao.query(sql, params);
+    return linhas.length > 0;
   }
 
   async atualizar(id, accountId, dados) {

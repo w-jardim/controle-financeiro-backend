@@ -400,22 +400,46 @@ components:
 
     # ---------- AGENDAMENTO ----------
     AgendamentoRequest:
-      type: object
-      required: [aluno_id, horario_aula_id, data_aula]
-      properties:
-        aluno_id:
-          type: integer
-        horario_aula_id:
-          type: integer
-        data_aula:
-          type: string
-          format: date
-        status:
-          type: string
-          enum: [agendado, cancelado, compareceu, faltou]
-        observacao:
-          type: string
-          nullable: true
+      description: >
+        Compatibilidade transitória: o endpoint aceita `horario_aula_id` (legado) ou `agenda_aula_id` (novo).
+        Quando `agenda_aula_id` for fornecido, este vínculo é o preferencial — o sistema usará a agenda vinculada.
+        Para manter compatibilidade, clientes antigos podem continuar enviando `horario_aula_id`.
+      oneOf:
+        - type: object
+          required: [aluno_id, horario_aula_id, data_aula]
+          properties:
+            aluno_id:
+              type: integer
+            horario_aula_id:
+              type: integer
+            data_aula:
+              type: string
+              format: date
+            status:
+              type: string
+              enum: [agendado, cancelado, compareceu, faltou]
+            observacao:
+              type: string
+              nullable: true
+        - type: object
+          required: [aluno_id, agenda_aula_id]
+          properties:
+            aluno_id:
+              type: integer
+            agenda_aula_id:
+              type: integer
+            # Quando `agenda_aula_id` for usado, a data da aula é definida pela agenda vinculada;
+            # `data_aula` não é obrigatória neste caso, mas pode ser aceita como informação adicional.
+            data_aula:
+              type: string
+              format: date
+              nullable: true
+            status:
+              type: string
+              enum: [agendado, cancelado, compareceu, faltou]
+            observacao:
+              type: string
+              nullable: true
 
     Agendamento:
       type: object
@@ -428,6 +452,10 @@ components:
           type: integer
         horario_aula_id:
           type: integer
+          nullable: true
+        agenda_aula_id:
+          type: integer
+          nullable: true
         data_aula:
           type: string
           format: date

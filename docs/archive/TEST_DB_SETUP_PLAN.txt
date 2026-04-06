@@ -1,3 +1,0 @@
-Plano técnico para preparação automatizada do banco de teste (controlador_financeiro_test)
-
-...arquivo arquivado durante limpeza automática...

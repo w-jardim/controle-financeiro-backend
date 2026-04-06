@@ -1,6 +1,7 @@
 const agendamentoRepository = require('../repositories/agendamentoRepository');
 const alunoRepository = require('../../alunos/repositories/alunoRepository');
 const horarioRepository = require('../../horarios-aula/repositories/horarioAulaRepository');
+const agendaAulasRepository = require('../../agenda-aulas/repositories/agendaAulasRepository');
 const AppError = require('../../../shared/errors/AppError');
 const conexao = require('../../../shared/database/connection');
 
@@ -43,23 +44,33 @@ class AgendamentoService {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
     const alunoId = Number(dados.aluno_id);
-    const horarioId = Number(dados.horario_aula_id);
+    const horarioId = dados.horario_aula_id !== undefined && dados.horario_aula_id !== null ? Number(dados.horario_aula_id) : null;
+    const agendaAulaId = dados.agenda_aula_id !== undefined && dados.agenda_aula_id !== null ? Number(dados.agenda_aula_id) : null;
     const dataAula = dados.data_aula; // expect 'YYYY-MM-DD'
     const observacao = dados.observacao || null;
     const status = dados.status || 'agendado';
 
-    if (!alunoId || !horarioId || !dataAula) throw new AppError('Campos obrigatórios ausentes', 400);
+    if (!alunoId || (!horarioId && !agendaAulaId) || !dataAula) throw new AppError('Campos obrigatórios ausentes', 400);
     if (!STATUS_VALIDOS.includes(status)) throw new AppError('Status inválido', 400);
 
     // Verificar pertença dos recursos à mesma account
     const aluno = await alunoRepository.buscarPorId(alunoId, accountId);
     if (!aluno) throw new AppError('Aluno não encontrado ou não pertence à conta', 404);
 
-    const horario = await horarioRepository.buscarPorId(horarioId, accountId);
-    if (!horario) throw new AppError('Horário não encontrado ou não pertence à conta', 404);
+    let horario = null;
+    if (horarioId) {
+      horario = await horarioRepository.buscarPorId(horarioId, accountId);
+      if (!horario) throw new AppError('Horário não encontrado ou não pertence à conta', 404);
+    }
+
+    let agendaAula = null;
+    if (agendaAulaId) {
+      agendaAula = await agendaAulasRepository.buscarPorId(agendaAulaId, accountId);
+      if (!agendaAula) throw new AppError('Agenda_aula não encontrada ou não pertence à conta', 404);
+    }
 
     // Quando existe limite de vagas fazemos fluxo transacional para evitar TOCTOU
-    if (horario.limite_vagas !== null && horario.limite_vagas !== undefined) {
+    if (horario && horario.limite_vagas !== null && horario.limite_vagas !== undefined) {
       const conn = await conexao.getConnection();
       try {
         await conn.beginTransaction();
@@ -69,7 +80,7 @@ class AgendamentoService {
           throw new AppError('Limite de vagas atingido para esse horário', 409);
         }
 
-        const resultado = await agendamentoRepository.criar({ accountId, alunoId, horarioAulaId: horarioId, dataAula, status, observacao }, conn);
+        const resultado = await agendamentoRepository.criar({ accountId, alunoId, horarioAulaId: horarioId, agendaAulaId: null, dataAula, status, observacao }, conn);
         await conn.commit();
         return { mensagem: 'Agendamento criado com sucesso', id: resultado.id };
       } catch (err) {
@@ -80,8 +91,16 @@ class AgendamentoService {
       }
     }
 
+    // Check duplicity depending on which id is provided
+    if (agendaAulaId) {
+      const exists = await agendamentoRepository.existeDuplicidadeAlunoAgenda(alunoId, agendaAulaId, dataAula, accountId);
+      if (exists) throw new AppError('Aluno já agendado para essa aula', 409);
+      const resultado = await agendamentoRepository.criar({ accountId, alunoId, horarioAulaId: null, agendaAulaId, dataAula, status, observacao });
+      return { mensagem: 'Agendamento criado com sucesso', id: resultado.id };
+    }
+
     // Path sem limite de vagas — INSERT direto (UNIQUE protege contra duplicidade)
-    const resultado = await agendamentoRepository.criar({ accountId, alunoId, horarioAulaId: horarioId, dataAula, status, observacao });
+    const resultado = await agendamentoRepository.criar({ accountId, alunoId, horarioAulaId: horarioId, agendaAulaId: null, dataAula, status, observacao });
     return { mensagem: 'Agendamento criado com sucesso', id: resultado.id };
   }
 

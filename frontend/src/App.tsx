@@ -10,6 +10,8 @@ import Alunos from './pages/alunos/Alunos'
 import Profissionais from './pages/profissionais/Profissionais'
 import Modalidades from './pages/modalidades/Modalidades'
 import Horarios from './pages/horarios/Horarios'
+import Escalas from './pages/escalas/Escalas'
+import AgendaAulas from './pages/agenda-aulas/AgendaAulas'
 import Agendamentos from './pages/agendamentos/Agendamentos'
 import Presencas from './pages/presencas/Presencas'
 import Mensalidades from './pages/mensalidades/Mensalidades'
@@ -35,6 +37,8 @@ export default function App() {
           <Route path="profissionais" element={<Profissionais />} />
           <Route path="modalidades" element={<Modalidades />} />
           <Route path="cts" element={<Cts />} />
+          <Route path="escalas" element={<Escalas />} />
+          <Route path="agenda-aulas" element={<AgendaAulas />} />
           <Route path="horarios" element={<Horarios />} />
           <Route path="agendamentos" element={<Agendamentos />} />
           <Route path="presencas" element={<Presencas />} />

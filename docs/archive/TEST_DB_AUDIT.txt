@@ -1,3 +1,0 @@
-Arquivo de auditoria do DB (arquivado durante limpeza).
-
-Conteúdo preservado por segurança.

@@ -52,10 +52,10 @@ WHERE ed.id IS NULL;
 
 -- ========== 5) Preparar colunas de transição para agendamentos ==========
 -- Adiciona coluna agenda_aula_id em agendamentos, se não existir
-ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS agenda_aula_id INT NULL;
+ALTER TABLE agendamentos ADD COLUMN agenda_aula_id INT NULL;
 
 -- Adiciona coluna temporária source_agendamento_id em agenda_aulas para mapear origem
-ALTER TABLE agenda_aulas ADD COLUMN IF NOT EXISTS source_agendamento_id INT NULL;
+
 
 -- Insert agenda_aulas only when no agenda exists for that agendamento (ensured by unique constraint on source_agendamento_id)
 INSERT INTO agenda_aulas (account_id, ct_id, escala_id, profissional_id, modalidade_id, data_aula, hora_inicio, hora_fim, status, observacao, source_agendamento_id)
