@@ -2,6 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:3000';
+const defaultAllowedHosts = ['localhost', '127.0.0.1', 'app.gardenwjs.tech'];
+const envAllowedHosts = process.env.VITE_ALLOWED_HOSTS
+  ? process.env.VITE_ALLOWED_HOSTS.split(',').map((h) => h.trim()).filter(Boolean)
+  : [];
+const allowedHosts = Array.from(new Set([...defaultAllowedHosts, ...envAllowedHosts]));
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -10,11 +17,13 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 5173,
+    allowedHosts,
     proxy: {
       // Encaminha chamadas /api -> backend em http://localhost:3000
       '/api': {
-        target: 'http://localhost:3000',
+        target: proxyTarget,
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api')
@@ -22,4 +31,3 @@ export default defineConfig({
     }
   },
 });
-

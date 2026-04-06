@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql-financeiro
+    container_name: mysql-financeiro-dev
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
@@ -9,7 +9,7 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data_dev:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
@@ -18,8 +18,10 @@ services:
       retries: 10
 
   backend:
-    image: wjardim/controle-financeiro-backend:1.2.0
-    container_name: financeiro-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: financeiro-backend-dev
     restart: always
     depends_on:
       mysql:
@@ -34,14 +36,39 @@ services:
       DB_PASSWORD: "${DB_PASSWORD}"
       DB_NAME: "${DB_NAME}"
       PORT: "${PORT}"
-      NODE_ENV: "${NODE_ENV}"
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: financeiro-frontend-dev
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_PROXY_TARGET: http://backend:3000
+      VITE_ALLOWED_HOSTS: app.gardenwjs.tech,localhost,127.0.0.1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5173
 
   adminer:
     image: adminer
-    container_name: adminer-financeiro
+    container_name: adminer-financeiro-dev
     restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       - "8080:8080"
 
 volumes:
-  mysql_data:
+  mysql_data_dev:
