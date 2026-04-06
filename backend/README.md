@@ -1,4 +1,4 @@
-# Controlador Financeiro — Backend
+# Gestão de CTs e Finanças — Backend
 
 API REST para gestão de centros de treinamento (CTs) de artes marciais: alunos, profissionais, modalidades, horários, agendamentos, presenças, mensalidades e transações financeiras.
 
@@ -127,12 +127,17 @@ npm run lint
 ## Docker — ambiente completo
 
 ```bash
-# Desenvolvimento (build local)
-docker compose -f docker-compose.dev.yml up --build
+# Desenvolvimento (stack padrão do projeto)
+docker compose up -d --build
 
-# Produção (imagem publicada)
-docker compose up -d
+# Opcional: usar explicitamente o arquivo dev
+docker compose -f docker-compose.dev.yml up -d --build
 ```
+
+No ambiente de desenvolvimento (`docker-compose.dev.yml`), os serviços sobem em:
+- Frontend (Vite): `http://localhost:5173`
+- Backend (API): `http://localhost:3000`
+- Adminer: `http://localhost:8080`
 
 ---
 

@@ -1,8 +1,8 @@
 
 
-# 🥋 API Gestão de CT - Backend
+# 🥋 Plataforma Gestão de CTs
 
-API REST para gestão de Centros de Treinamento (CTs) com controle financeiro, autenticação JWT e arquitetura multi-tenant.
+Plataforma para gestão de Centros de Treinamento (CTs) com controle financeiro, autenticação JWT e arquitetura multi-tenant.
 
 ---
 
@@ -104,5 +104,4 @@ Resposta com token:
 ## 👨‍💻 Autor
 
 Wallace 🚀
-
 

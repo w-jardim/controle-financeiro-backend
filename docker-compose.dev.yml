@@ -1,5 +1,5 @@
 services:
- 
+
   mysql:
     image: mysql:8.0
     container_name: mysql-financeiro-dev
@@ -39,10 +39,27 @@ services:
       PORT: "${PORT}"
       NODE_ENV: development
     volumes:
-      # Em desenvolvimento evite sobrescrever o node_modules da imagem.
-      # Removido bind-mount do diretório completo para preservar dependências instaladas na imagem.
+      - ./backend:/app
       - /app/node_modules
     command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: financeiro-frontend-dev
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_PROXY_TARGET: http://backend:3000
+      VITE_ALLOWED_HOSTS: app.gardenwjs.tech,localhost,127.0.0.1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5173
 
   adminer:
     image: adminer

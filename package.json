@@ -1,4 +1,6 @@
 {
+  "name": "gestao-ct-financeiro-plataforma",
+  "private": true,
   "dependencies": {
     "bcrypt": "^6.0.0"
   }

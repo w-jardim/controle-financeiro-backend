@@ -16,6 +16,8 @@ const { registrarRotasHorarios } = require('./modules/horarios-aula/module');
 const { registrarRotasAgendamentos } = require('./modules/agendamentos/module');
 const { registrarRotasPresencas } = require('./modules/presencas/module');
 const { registrarRotasMensalidades } = require('./modules/mensalidades/module');
+const { registrarRotasEscalas } = require('./modules/escalas/module');
+const { registrarRotasAgendaAulas } = require('./modules/agenda-aulas/module');
 /**
  * Cria e configura a aplicação Express
  * Não faz listen neste arquivo
@@ -140,6 +142,12 @@ apiRouter.use('/presencas', authMiddleware);
 // Proteger as rotas de Mensalidades com JWT
 apiRouter.use('/mensalidades', authMiddleware);
 
+// Proteger as rotas de Escalas com JWT
+apiRouter.use('/escalas', authMiddleware);
+
+// Proteger as rotas de Agenda de Aulas com JWT
+apiRouter.use('/agenda-aulas', authMiddleware);
+
 // Registrar módulos na rota /api
 registrarRotasTransacoes(apiRouter);
 registrarRotasAuth(apiRouter);
@@ -151,6 +159,8 @@ registrarRotasHorarios(apiRouter);
 registrarRotasAgendamentos(apiRouter);
 registrarRotasPresencas(apiRouter);
 registrarRotasMensalidades(apiRouter);
+registrarRotasEscalas(apiRouter);
+registrarRotasAgendaAulas(apiRouter);
 
 // Montar o router da API em /api
 app.use('/api', apiRouter);
