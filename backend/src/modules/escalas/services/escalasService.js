@@ -1,4 +1,5 @@
 const escalaRepository = require('../repositories/escalasRepository');
+const agendaRepository = require('../../agenda-aulas/repositories/agendaAulasRepository');
 const ctRepository = require('../../cts/repositories/ctRepository');
 const profissionalRepository = require('../../profissionais/repositories/profissionalRepository');
 const modalidadeRepository = require('../../modalidades/repositories/modalidadeRepository');
@@ -120,7 +121,12 @@ class EscalasService {
     if (!existente) throw new AppError('Escala não encontrada', 404);
 
     await escalaRepository.alterarStatus(idNumero, accountId, false);
-    return { mensagem: 'Escala desativada com sucesso' };
+
+    // cancelar automaticamente aulas futuras pendentes vinculadas a esta escala
+    const hoje = new Date().toISOString().slice(0, 10);
+    const { afetadas } = await agendaRepository.cancelarAulasFuturasDeEscala(accountId, idNumero, hoje);
+
+    return { mensagem: 'Escala desativada com sucesso', aulasCanceladas: afetadas };
   }
 
   async ativar(id, accountId) {
@@ -133,6 +139,36 @@ class EscalasService {
 
     await escalaRepository.alterarStatus(idNumero, accountId, true);
     return { mensagem: 'Escala ativada com sucesso' };
+  }
+
+  async listarAulas(id, query, accountId) {
+    if (!accountId) throw new AppError('accountId é obrigatório', 400);
+    const idNumero = Number(id);
+    if (!Number.isInteger(idNumero) || idNumero <= 0) throw new AppError('ID inválido', 400);
+
+    const escala = await escalaRepository.buscarPorId(idNumero, accountId);
+    if (!escala) throw new AppError('Escala não encontrada', 404);
+
+    const pagina = Number(query.page || query.pagina || 1);
+    const limite = Number(query.limit || query.limite || 20);
+    if (!Number.isInteger(pagina) || pagina <= 0) throw new AppError('Parâmetro page inválido', 400);
+    if (!Number.isInteger(limite) || limite <= 0) throw new AppError('Parâmetro limit inválido', 400);
+    const offset = (pagina - 1) * limite;
+
+    const filtros = { escala_id: idNumero };
+    if (query.status) filtros.status = query.status;
+    if (query.data_inicio) filtros.data_inicio = query.data_inicio;
+    if (query.data_fim) filtros.data_fim = query.data_fim;
+
+    const resultado = await agendaRepository.listar({ limite, offset, accountId, filtros });
+    return {
+      pagina,
+      limite,
+      total: resultado.total,
+      totalPaginas: Math.ceil(resultado.total / limite),
+      escala,
+      dados: resultado.dados,
+    };
   }
 }
 

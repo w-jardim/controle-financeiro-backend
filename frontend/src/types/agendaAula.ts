@@ -12,6 +12,22 @@ export interface AgendaAula {
   observacao?: string | null;
   criado_em: string;
   atualizado_em: string;
+  // campos enriquecidos via JOIN
+  profissional_nome?: string | null;
+  modalidade_nome?: string | null;
+  ct_nome?: string | null;
+  escala_hora_inicio?: string | null;
+  escala_hora_fim?: string | null;
+}
+
+export interface AgendaFiltros {
+  escala_id?: number;
+  ct_id?: number;
+  modalidade_id?: number;
+  profissional_id?: number;
+  status?: string;
+  data_inicio?: string;
+  data_fim?: string;
 }
 
 export interface ListaAgendaResponse {

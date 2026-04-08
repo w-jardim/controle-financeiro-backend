@@ -2,14 +2,37 @@ const conexao = require('../../../shared/database/connection');
 const AppError = require('../../../shared/errors/AppError');
 
 class AgendaAulasRepository {
-  async listar({ limite, offset, accountId }) {
+  async listar({ limite, offset, accountId, filtros = {} }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
-    const filtros = ['a.account_id = ?'];
+    const whereClauses = ['a.account_id = ?'];
     const params = [accountId];
 
-    const where = ` WHERE ${filtros.join(' AND ')}`;
-    const consulta = `SELECT a.* FROM agenda_aulas a ${where} ORDER BY data_aula DESC, hora_inicio DESC LIMIT ? OFFSET ?`;
+    if (filtros.escala_id) { whereClauses.push('a.escala_id = ?'); params.push(filtros.escala_id); }
+    if (filtros.ct_id) { whereClauses.push('a.ct_id = ?'); params.push(filtros.ct_id); }
+    if (filtros.modalidade_id) { whereClauses.push('a.modalidade_id = ?'); params.push(filtros.modalidade_id); }
+    if (filtros.profissional_id) { whereClauses.push('a.profissional_id = ?'); params.push(filtros.profissional_id); }
+    if (filtros.status) { whereClauses.push('a.status = ?'); params.push(filtros.status); }
+    if (filtros.data_inicio) { whereClauses.push('a.data_aula >= ?'); params.push(filtros.data_inicio); }
+    if (filtros.data_fim) { whereClauses.push('a.data_aula <= ?'); params.push(filtros.data_fim); }
+
+    const where = ` WHERE ${whereClauses.join(' AND ')}`;
+    const consulta = `
+      SELECT
+        a.*,
+        p.nome  AS profissional_nome,
+        m.nome  AS modalidade_nome,
+        c.nome  AS ct_nome,
+        e.hora_inicio AS escala_hora_inicio,
+        e.hora_fim    AS escala_hora_fim
+      FROM agenda_aulas a
+      LEFT JOIN profissionais p  ON p.id = a.profissional_id
+      LEFT JOIN modalidades m    ON m.id = a.modalidade_id
+      LEFT JOIN cts c            ON c.id = a.ct_id
+      LEFT JOIN escalas e        ON e.id = a.escala_id
+      ${where}
+      ORDER BY a.data_aula DESC, a.hora_inicio DESC
+      LIMIT ? OFFSET ?`;
     const paramsWithLimit = params.concat([limite, offset]);
 
     const [dados] = await conexao.query(consulta, paramsWithLimit);
@@ -20,8 +43,40 @@ class AgendaAulasRepository {
 
   async buscarPorId(id, accountId) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
-    const [linhas] = await conexao.query('SELECT * FROM agenda_aulas WHERE id = ? AND account_id = ?', [id, accountId]);
+    const [linhas] = await conexao.query(
+      `SELECT
+        a.*,
+        p.nome  AS profissional_nome,
+        m.nome  AS modalidade_nome,
+        c.nome  AS ct_nome,
+        e.hora_inicio AS escala_hora_inicio,
+        e.hora_fim    AS escala_hora_fim
+      FROM agenda_aulas a
+      LEFT JOIN profissionais p  ON p.id = a.profissional_id
+      LEFT JOIN modalidades m    ON m.id = a.modalidade_id
+      LEFT JOIN cts c            ON c.id = a.ct_id
+      LEFT JOIN escalas e        ON e.id = a.escala_id
+      WHERE a.id = ? AND a.account_id = ?`,
+      [id, accountId]
+    );
     return linhas[0] || null;
+  }
+
+  async verificarExistente(accountId, escalaId, dataAula) {
+    const [linhas] = await conexao.query(
+      'SELECT id FROM agenda_aulas WHERE account_id = ? AND escala_id = ? AND data_aula = ? LIMIT 1',
+      [accountId, escalaId, dataAula]
+    );
+    return linhas[0] || null;
+  }
+
+  async cancelarAulasFuturasDeEscala(accountId, escalaId, hoje) {
+    const [resultado] = await conexao.query(
+      `UPDATE agenda_aulas SET status = 'cancelada'
+       WHERE account_id = ? AND escala_id = ? AND data_aula >= ? AND status IN ('rascunho', 'liberada')`,
+      [accountId, escalaId, hoje]
+    );
+    return { afetadas: resultado.affectedRows };
   }
 
   async criar({ accountId, ctId, escalaId, profissionalId, modalidadeId, dataAula, horaInicio, horaFim, observacao }) {

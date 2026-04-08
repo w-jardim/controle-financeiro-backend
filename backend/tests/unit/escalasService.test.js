@@ -1,11 +1,13 @@
 const escalaService = require('../../src/modules/escalas/services/escalasService');
 const escalaRepository = require('../../src/modules/escalas/repositories/escalasRepository');
+const agendaRepository = require('../../src/modules/agenda-aulas/repositories/agendaAulasRepository');
 const ctRepository = require('../../src/modules/cts/repositories/ctRepository');
 const profissionalRepository = require('../../src/modules/profissionais/repositories/profissionalRepository');
 const modalidadeRepository = require('../../src/modules/modalidades/repositories/modalidadeRepository');
 const AppError = require('../../src/shared/errors/AppError');
 
 jest.mock('../../src/modules/escalas/repositories/escalasRepository');
+jest.mock('../../src/modules/agenda-aulas/repositories/agendaAulasRepository');
 jest.mock('../../src/modules/cts/repositories/ctRepository');
 jest.mock('../../src/modules/profissionais/repositories/profissionalRepository');
 jest.mock('../../src/modules/modalidades/repositories/modalidadeRepository');
@@ -91,8 +93,11 @@ describe('EscalasService', () => {
     const existente = { id: 11 };
     escalaRepository.buscarPorId.mockResolvedValue(existente);
     escalaRepository.alterarStatus.mockResolvedValue({ afetadas: 1 });
+    agendaRepository.cancelarAulasFuturasDeEscala.mockResolvedValue({ afetadas: 0 });
 
-    await expect(escalaService.desativar(11, 8)).resolves.toEqual({ mensagem: 'Escala desativada com sucesso' });
+    const desativarResult = await escalaService.desativar(11, 8);
+    expect(desativarResult).toMatchObject({ mensagem: 'Escala desativada com sucesso' });
+    expect(desativarResult).toHaveProperty('aulasCanceladas');
     expect(escalaRepository.alterarStatus).toHaveBeenCalledWith(11, 8, false);
 
     await expect(escalaService.ativar(11, 8)).resolves.toEqual({ mensagem: 'Escala ativada com sucesso' });

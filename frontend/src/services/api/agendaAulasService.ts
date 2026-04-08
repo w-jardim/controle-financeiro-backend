@@ -1,8 +1,8 @@
 import api from './axios';
-import type { ListaAgendaResponse, CriarAgendaPayload, AtualizarAgendaPayload, AgendaResponse } from '../../types/agendaAula';
+import type { ListaAgendaResponse, CriarAgendaPayload, AtualizarAgendaPayload, AgendaResponse, AgendaFiltros } from '../../types/agendaAula';
 
-export const listarAgendaApi = async (page: number = 1, limit: number = 20): Promise<ListaAgendaResponse> => {
-  const response = await api.get('/agenda-aulas', { params: { page, limit } });
+export const listarAgendaApi = async (page: number = 1, limit: number = 20, filtros: AgendaFiltros = {}): Promise<ListaAgendaResponse> => {
+  const response = await api.get('/agenda-aulas', { params: { page, limit, ...filtros } });
   return response.data;
 };
 

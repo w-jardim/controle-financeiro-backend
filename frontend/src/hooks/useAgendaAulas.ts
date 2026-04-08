@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CriarAgendaPayload, AtualizarAgendaPayload } from '../types/agendaAula';
+import type { CriarAgendaPayload, AtualizarAgendaPayload, AgendaFiltros } from '../types/agendaAula';
 import {
   listarAgendaApi,
   buscarAgendaPorIdApi,
@@ -11,8 +11,8 @@ import {
   gerarPorEscalaApi,
 } from '../services/api/agendaAulasService';
 
-export const useAgenda = (page: number = 1, limit: number = 20) => {
-  return useQuery({ queryKey: ['agenda', page, limit], queryFn: () => listarAgendaApi(page, limit) });
+export const useAgenda = (page: number = 1, limit: number = 20, filtros: AgendaFiltros = {}) => {
+  return useQuery({ queryKey: ['agenda', page, limit, filtros], queryFn: () => listarAgendaApi(page, limit, filtros) });
 };
 
 export const useAgendaItem = (id: number | null) => {

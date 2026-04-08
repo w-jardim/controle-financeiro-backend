@@ -7,7 +7,8 @@ const {
   criarEscala,
   atualizarEscala,
   desativarEscala,
-  ativarEscala
+  ativarEscala,
+  listarAulasDeEscala,
 } = require('../controllers/escalasController');
 
 const validarIdNumerico = require('../../../shared/middlewares/validarIdNumerico');
@@ -19,6 +20,7 @@ roteador.get('/', listarEscalas);
 roteador.post('/', validate(criarEscalaSchema), criarEscala);
 roteador.patch('/:id/desativar', validarIdNumerico, validate(idParamSchema, 'params'), desativarEscala);
 roteador.patch('/:id/ativar', validarIdNumerico, validate(idParamSchema, 'params'), ativarEscala);
+roteador.get('/:id/aulas', validarIdNumerico, validate(idParamSchema, 'params'), listarAulasDeEscala);
 roteador.get('/:id', validarIdNumerico, validate(idParamSchema, 'params'), buscarEscalaPorId);
 roteador.put('/:id', validarIdNumerico, validate(idParamSchema, 'params'), validate(atualizarEscalaSchema), atualizarEscala);
 

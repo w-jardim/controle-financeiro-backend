@@ -119,6 +119,9 @@ vi.mock('../../hooks/useEscalas', () => ({
   }),
   useCriarEscala: () => ({ ...mutationMock, isError: false }),
   useAtualizarEscala: () => mutationMock,
+  useDesativarEscala: () => mutationMock,
+  useAtivarEscala: () => mutationMock,
+  useAulasDeEscala: () => ({ data: { dados: [] }, isLoading: false, isError: false }),
 }));
 
 vi.mock('../../hooks/useAgendaAulas', () => ({
@@ -134,6 +137,9 @@ vi.mock('../../hooks/useAgendaAulas', () => ({
           hora_inicio: '08:00',
           hora_fim: '09:00',
           status: 'liberada',
+          ct_nome: 'CT Alpha',
+          modalidade_nome: 'Muay Thai',
+          profissional_nome: 'Prof 1',
         },
       ],
     },
@@ -141,6 +147,11 @@ vi.mock('../../hooks/useAgendaAulas', () => ({
     isError: false,
   }),
   useCriarAgenda: () => mutationMock,
+  useAtualizarAgenda: () => mutationMock,
+  useGerarPorEscala: () => mutationMock,
+  useLiberarAgenda: () => mutationMock,
+  useCancelarAgenda: () => mutationMock,
+  useEncerrarAgenda: () => mutationMock,
 }));
 
 vi.mock('../../hooks/useAgendamentos', () => ({
@@ -243,7 +254,7 @@ describe('Módulos Front - cobertura de páginas', () => {
 
   it('Escalas renderiza formulário e grade', () => {
     render(<Escalas />);
-    expect(screen.getByText('Escalas')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Escalas/i })).toBeInTheDocument();
     expect(screen.getByText('Horários por dia')).toBeInTheDocument();
   });
 
@@ -251,9 +262,10 @@ describe('Módulos Front - cobertura de páginas', () => {
     const user = userEvent.setup();
     render(<AgendaAulas />);
     expect(screen.getByText('Agenda de Aulas')).toBeInTheDocument();
-    const btn = screen.getByRole('button', { name: /Criar Aula/i });
-    await user.click(btn);
-    expect(btn).toBeInTheDocument();
+    // A nova UI tem abas: "Lista", "+ Aula Manual", "Gerar por Escala"
+    const btnManual = screen.getByRole('button', { name: /Aula Manual/i });
+    await user.click(btnManual);
+    expect(screen.getByText(/Criar Aula Manual/i)).toBeInTheDocument();
   });
 
   it('Agendamentos renderiza listagem', () => {

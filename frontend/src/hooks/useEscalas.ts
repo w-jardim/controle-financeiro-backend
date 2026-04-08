@@ -7,6 +7,7 @@ import {
   atualizarEscalaApi,
   desativarEscalaApi,
   ativarEscalaApi,
+  listarAulasDeEscalaApi,
 } from '../services/api/escalasService';
 
 export const useEscalas = (page: number = 1, limit: number = 20, filters: Record<string, any> = {}) => {
@@ -29,10 +30,21 @@ export const useAtualizarEscala = () => {
 
 export const useDesativarEscala = () => {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (id: number) => desativarEscalaApi(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['escalas'] }) });
+  return useMutation({ mutationFn: (id: number) => desativarEscalaApi(id), onSuccess: () => { qc.invalidateQueries({ queryKey: ['escalas'] }); qc.invalidateQueries({ queryKey: ['agenda'] }); } });
 };
 
 export const useAtivarEscala = () => {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: number) => ativarEscalaApi(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['escalas'] }) });
+};
+
+export const useAulasDeEscala = (
+  escalaId: number | null,
+  params: { page?: number; limit?: number; status?: string; data_inicio?: string; data_fim?: string } = {}
+) => {
+  return useQuery({
+    queryKey: ['escalas', escalaId, 'aulas', params],
+    queryFn: () => listarAulasDeEscalaApi(escalaId!, params),
+    enabled: !!escalaId,
+  });
 };

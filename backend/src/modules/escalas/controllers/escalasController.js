@@ -32,11 +32,17 @@ const ativarEscala = asyncHandler(async (req, res) => {
   return sucesso(res, resultado);
 });
 
+const listarAulasDeEscala = asyncHandler(async (req, res) => {
+  const { dados, ...meta } = await escalaService.listarAulas(req.params.id, req.query, req.user.accountId);
+  return sucesso(res, dados, meta);
+});
+
 module.exports = {
   listarEscalas,
   buscarEscalaPorId,
   criarEscala,
   atualizarEscala,
   desativarEscala,
-  ativarEscala
+  ativarEscala,
+  listarAulasDeEscala,
 };

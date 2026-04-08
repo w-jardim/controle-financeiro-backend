@@ -1,5 +1,6 @@
 import api from './axios';
 import type { ListaEscalasResponse, CriarEscalaPayload, AtualizarEscalaPayload, EscalaResponse } from '../../types/escala';
+import type { ListaAgendaResponse } from '../../types/agendaAula';
 
 export const listarEscalasApi = async (page: number = 1, limit: number = 20, filters: Record<string, any> = {}): Promise<ListaEscalasResponse> => {
   const params: Record<string, any> = { page, limit, ...filters };
@@ -29,5 +30,13 @@ export const desativarEscalaApi = async (id: number) => {
 
 export const ativarEscalaApi = async (id: number) => {
   const response = await api.patch(`/escalas/${id}/ativar`);
+  return response.data;
+};
+
+export const listarAulasDeEscalaApi = async (
+  escalaId: number,
+  params: { page?: number; limit?: number; status?: string; data_inicio?: string; data_fim?: string } = {}
+): Promise<ListaAgendaResponse> => {
+  const response = await api.get(`/escalas/${escalaId}/aulas`, { params });
   return response.data;
 };

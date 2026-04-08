@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { useEscalas, useCriarEscala, useAtualizarEscala } from '../../hooks/useEscalas';
+import { useEscalas, useCriarEscala, useAtualizarEscala, useDesativarEscala, useAtivarEscala } from '../../hooks/useEscalas';
+import { useGerarPorEscala } from '../../hooks/useAgendaAulas';
 import { useCts } from '../../hooks/useCts';
 import { useModalidades } from '../../hooks/useModalidades';
 import { useProfissionais } from '../../hooks/useProfissionais';
@@ -40,8 +41,13 @@ const Escalas: React.FC = () => {
 
   const criarMut = useCriarEscala();
   const atualizarMut = useAtualizarEscala();
+  const desativarMut = useDesativarEscala();
+  const ativarMut = useAtivarEscala();
+  const gerarMut = useGerarPorEscala();
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editingGroup, setEditingGroup] = React.useState<null | { ct_id: number; modalidade_id: number; profissional_id: number }>(null);
+  const [gerandoEscalaId, setGerandoEscalaId] = React.useState<number | null>(null);
+  const [gerarForm, setGerarForm] = React.useState<{ data_inicio: string; data_fim: string }>({ data_inicio: '', data_fim: '' });
 
   const {
     register,
@@ -338,39 +344,108 @@ const Escalas: React.FC = () => {
           })();
 
           return (
-            <table className="min-w-full bg-white">
-          <thead>
+            <>
+            <table className="min-w-full bg-white border rounded">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2">CT</th>
-              <th className="px-4 py-2">Modalidade</th>
-              <th className="px-4 py-2">Profissional</th>
-              <th className="px-4 py-2">Dias</th>
-              <th className="px-4 py-2">Horários</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Ações</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">CT</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Modalidade</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Profissional</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Escalas</th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Ações Grupo</th>
             </tr>
           </thead>
-          <tbody>
-            {groups.map((g: any, gi: number) => {
-              const allDias = Array.from(new Set(g.escalas.flatMap((s: any) => s.dias_semana || []))).sort((a: number, b: number) => a - b);
-              return (
-                <tr key={gi}>
-                  <td className="px-4 py-2">{ctsMap.get(g.ct_id) || g.ct_id}</td>
-                  <td className="px-4 py-2">{modalidadesMap.get(g.modalidade_id) || g.modalidade_id}</td>
-                  <td className="px-4 py-2">{profissionaisMap.get(g.profissional_id) || g.profissional_id}</td>
-                  <td className="px-4 py-2">{allDias.map((d: number) => DIAS_SEMANA.find((x) => x.valor === d)?.label || d).join(', ')}</td>
-                  <td className="px-4 py-2">
-                    {g.escalas.map((s: any, idx: number) => (
-                      <div key={idx} className="text-sm">{s.hora_inicio.slice(0,5)} - {s.hora_fim.slice(0,5)} ({(s.dias_semana||[]).map((d:number)=>DIAS_SEMANA.find(x=>x.valor===d)?.label).join(', ')})</div>
-                    ))}
-                  </td>
-                  <td className="px-4 py-2">{g.escalas.some((s:any)=>s.ativo) ? 'Ativo' : 'Inativo'}</td>
-                  <td className="px-4 py-2"><button type="button" onClick={() => startEdit(g)} className="btn btn-sm">Editar</button></td>
-                </tr>
-              );
-            })}
+          <tbody className="divide-y divide-gray-100">
+            {groups.map((g: any, gi: number) => (
+              <tr key={gi} className="hover:bg-gray-50">
+                <td className="px-3 py-2 text-sm align-top">{ctsMap.get(g.ct_id) || g.ct_id}</td>
+                <td className="px-3 py-2 text-sm align-top">{modalidadesMap.get(g.modalidade_id) || g.modalidade_id}</td>
+                <td className="px-3 py-2 text-sm align-top">{profissionaisMap.get(g.profissional_id) || g.profissional_id}</td>
+                <td className="px-3 py-2 align-top">
+                  <div className="space-y-2">
+                    {g.escalas.map((s: any) => {
+                      const dias = (s.dias_semana || []).map((d: number) => DIAS_SEMANA.find((x) => x.valor === d)?.label || d).join(', ');
+                      return (
+                        <div key={s.id} className="flex items-center gap-3 text-sm">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {s.ativo ? 'Ativo' : 'Inativo'}
+                          </span>
+                          <span>{s.hora_inicio?.slice(0, 5)}–{s.hora_fim?.slice(0, 5)}</span>
+                          <span className="text-gray-500">{dias}</span>
+                          <button
+                            type="button"
+                            className="btn btn-sm text-xs text-blue-600 border-blue-300"
+                            onClick={() => { setGerandoEscalaId(s.id); setGerarForm({ data_inicio: '', data_fim: '' }); }}
+                          >
+                            Gerar Agenda
+                          </button>
+                          {s.ativo ? (
+                            <button
+                              type="button"
+                              className="btn btn-sm text-xs text-red-600 border-red-300"
+                              onClick={() => desativarMut.mutate(s.id)}
+                            >
+                              Desativar
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn btn-sm text-xs text-green-600 border-green-300"
+                              onClick={() => ativarMut.mutate(s.id)}
+                            >
+                              Ativar
+                            </button>
+                          )}
+                          {/* Painel inline de geração */}
+                          {gerandoEscalaId === s.id && (
+                            <div className="flex items-center gap-2 p-2 bg-blue-50 rounded border border-blue-200">
+                              <input
+                                type="date"
+                                className="input w-36 text-xs"
+                                placeholder="Data início"
+                                value={gerarForm.data_inicio}
+                                onChange={(e) => setGerarForm((f) => ({ ...f, data_inicio: e.target.value }))}
+                              />
+                              <span>→</span>
+                              <input
+                                type="date"
+                                className="input w-36 text-xs"
+                                placeholder="Data fim"
+                                value={gerarForm.data_fim}
+                                onChange={(e) => setGerarForm((f) => ({ ...f, data_fim: e.target.value }))}
+                              />
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-primary text-xs"
+                                disabled={gerarMut.isPending}
+                                onClick={async () => {
+                                  if (!gerarForm.data_inicio || !gerarForm.data_fim) { alert('Preencha as datas.'); return; }
+                                  try {
+                                    const res = await gerarMut.mutateAsync({ escala_id: s.id, data_inicio: gerarForm.data_inicio, data_fim: gerarForm.data_fim });
+                                    const d = res?.dados;
+                                    alert(`Criado: ${d?.criado ?? 0} aula(s). Ignoradas: ${d?.ignorados ?? 0}`);
+                                    setGerandoEscalaId(null);
+                                  } catch { return; }
+                                }}
+                              >
+                                {gerarMut.isPending ? '...' : 'Gerar'}
+                              </button>
+                              <button type="button" className="btn btn-sm text-xs" onClick={() => setGerandoEscalaId(null)}>✕</button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </td>
+                <td className="px-3 py-2 align-top">
+                  <button type="button" onClick={() => startEdit(g)} className="btn btn-sm text-xs">Editar</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
+            </>
           );
         })()
       )}

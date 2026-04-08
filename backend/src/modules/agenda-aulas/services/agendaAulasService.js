@@ -17,7 +17,16 @@ class AgendaAulasService {
 
     const offset = (pagina - 1) * limite;
 
-    const resultado = await agendaRepository.listar({ limite, offset, accountId });
+    const filtros = {};
+    if (query.escala_id) filtros.escala_id = Number(query.escala_id);
+    if (query.ct_id) filtros.ct_id = Number(query.ct_id);
+    if (query.modalidade_id) filtros.modalidade_id = Number(query.modalidade_id);
+    if (query.profissional_id) filtros.profissional_id = Number(query.profissional_id);
+    if (query.status) filtros.status = query.status;
+    if (query.data_inicio) filtros.data_inicio = query.data_inicio;
+    if (query.data_fim) filtros.data_fim = query.data_fim;
+
+    const resultado = await agendaRepository.listar({ limite, offset, accountId, filtros });
 
     return {
       pagina,
@@ -47,7 +56,7 @@ class AgendaAulasService {
     const dataAula = dados.data_aula;
     const horaInicio = dados.hora_inicio;
     const horaFim = dados.hora_fim;
-    const escalaId = dados.escala_id !== undefined ? Number(dados.escala_id) : null;
+    const escalaId = dados.escala_id !== undefined && dados.escala_id !== null ? Number(dados.escala_id) : null;
 
     if (!ctId || !profissionalId || !modalidadeId || !dataAula || !horaInicio || !horaFim) {
       throw new AppError('Campos obrigatórios ausentes', 400);
@@ -64,6 +73,20 @@ class AgendaAulasService {
 
     const mod = await modalidadeRepository.buscarPorId(modalidadeId, accountId);
     if (!mod) throw new AppError('Modalidade não encontrada ou não pertence à conta', 404);
+
+    // se escala_id for fornecido, valida vínculo e consistência
+    if (escalaId) {
+      const escala = await escalaRepository.buscarPorId(escalaId, accountId);
+      if (!escala) throw new AppError('Escala não encontrada ou não pertence à conta', 404);
+      if (!escala.ativo) throw new AppError('Escala está desativada', 400);
+
+      // valida que o dia da semana da data_aula está nos dias da escala
+      const diaDaAula = new Date(dataAula + 'T00:00:00').getDay();
+      const diasEscala = Array.isArray(escala.dias_semana) ? escala.dias_semana : [];
+      if (diasEscala.length > 0 && !diasEscala.includes(diaDaAula)) {
+        throw new AppError(`O dia da semana de ${dataAula} (${diaDaAula}) não faz parte dos dias da escala`, 400);
+      }
+    }
 
     const resultado = await agendaRepository.criar({ accountId, ctId, escalaId, profissionalId, modalidadeId, dataAula, horaInicio, horaFim, observacao: dados.observacao });
     return { mensagem: 'Aula criada com sucesso', id: resultado.id };
@@ -141,6 +164,7 @@ class AgendaAulasService {
 
     const escala = await escalaRepository.buscarPorId(escala_id, accountId);
     if (!escala) throw new AppError('Escala não encontrada', 404);
+    if (!escala.ativo) throw new AppError('Não é possível gerar agenda a partir de uma escala desativada', 400);
 
     // strategy: iterate dates between data_inicio and data_fim, match dias_semana and create agenda entries
     const inicio = new Date(data_inicio);
@@ -148,17 +172,34 @@ class AgendaAulasService {
     if (fim < inicio) throw new AppError('data_fim deve ser igual ou posterior a data_inicio', 400);
 
     const criadoIds = [];
+    const ignorados = [];
     for (let d = new Date(inicio); d <= fim; d.setDate(d.getDate() + 1)) {
       const dia = d.getDay();
       if (escala.dias_semana.includes(dia)) {
-        const dataAula = new Date(d);
-        const iso = dataAula.toISOString().slice(0,10);
-        const res = await agendaRepository.criar({ accountId, ctId: escala.ct_id, escalaId: escala.id, profissionalId: escala.profissional_id, modalidadeId: escala.modalidade_id, dataAula: iso, horaInicio: escala.hora_inicio, horaFim: escala.hora_fim });
+        const iso = new Date(d).toISOString().slice(0, 10);
+        // deduplicação: pular se já existe agenda para essa escala+data
+        const existente = await agendaRepository.verificarExistente(accountId, escala.id, iso);
+        if (existente) { ignorados.push(iso); continue; }
+        const res = await agendaRepository.criar({
+          accountId,
+          ctId: escala.ct_id,
+          escalaId: escala.id,
+          profissionalId: escala.profissional_id,
+          modalidadeId: escala.modalidade_id,
+          dataAula: iso,
+          horaInicio: escala.hora_inicio,
+          horaFim: escala.hora_fim,
+        });
         criadoIds.push(res.id);
       }
     }
 
-    return { mensagem: 'Agenda gerada a partir da escala', criado: criadoIds.length, ids: criadoIds };
+    return {
+      mensagem: 'Agenda gerada a partir da escala',
+      criado: criadoIds.length,
+      ignorados: ignorados.length,
+      ids: criadoIds,
+    };
   }
 }
 
