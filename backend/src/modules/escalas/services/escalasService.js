@@ -16,7 +16,19 @@ class EscalasService {
 
     const offset = (pagina - 1) * limite;
 
-    const resultado = await escalaRepository.listar({ limite, offset, accountId });
+    // collect optional filters from query
+    const filtros = {};
+    if (query.ct_id) filtros.ct_id = Number(query.ct_id);
+    if (query.modalidade_id) filtros.modalidade_id = Number(query.modalidade_id);
+    if (query.profissional_id) filtros.profissional_id = Number(query.profissional_id);
+    if (query.dia_semana !== undefined) {
+      // accept comma-separated or single value
+      if (Array.isArray(query.dia_semana)) filtros.dia_semana = query.dia_semana.map(Number);
+      else if (String(query.dia_semana).includes(',')) filtros.dia_semana = String(query.dia_semana).split(',').map(Number);
+      else filtros.dia_semana = [Number(query.dia_semana)];
+    }
+
+    const resultado = await escalaRepository.listar({ limite, offset, accountId, filtros });
 
     return {
       pagina,

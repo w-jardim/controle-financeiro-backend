@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useEscalas, useCriarEscala } from '../../hooks/useEscalas';
+import { useEscalas, useCriarEscala, useAtualizarEscala } from '../../hooks/useEscalas';
 import { useCts } from '../../hooks/useCts';
 import { useModalidades } from '../../hooks/useModalidades';
 import { useProfissionais } from '../../hooks/useProfissionais';
@@ -23,7 +23,8 @@ const DIAS_SEMANA = [
 
 const Escalas: React.FC = () => {
   const page = 1;
-  const { data, isLoading, isError } = useEscalas(page, 50);
+  const [filters, setFilters] = React.useState<Record<string, any>>({});
+  const { data, isLoading, isError } = useEscalas(page, 50, filters);
   const escalas = useMemo(() => data?.dados || [], [data]);
   const { data: ctsData, isLoading: isLoadingCts } = useCts();
   const { data: modalidadesData, isLoading: isLoadingModalidades } = useModalidades(1, 100);
@@ -38,6 +39,9 @@ const Escalas: React.FC = () => {
   const profissionaisMap = useMemo(() => new Map(profissionais.map((p) => [p.id, p.nome])), [profissionais]);
 
   const criarMut = useCriarEscala();
+  const atualizarMut = useAtualizarEscala();
+  const [editingId, setEditingId] = React.useState<number | null>(null);
+  const [editingGroup, setEditingGroup] = React.useState<null | { ct_id: number; modalidade_id: number; profissional_id: number }>(null);
 
   const {
     register,
@@ -69,25 +73,100 @@ const Escalas: React.FC = () => {
     }
 
     try {
-      for (const dia of dias) {
+      if (editingGroup) {
+        // Find existing escalas for this group
+        const related = escalas.filter((x: any) => x.ct_id === editingGroup.ct_id && x.modalidade_id === editingGroup.modalidade_id && x.profissional_id === editingGroup.profissional_id);
+
+        // For each selected day, for each interval, try to match existing escala by hora_inicio/hora_fim and day
+        for (const dia of dias) {
+          const intervals = horariosPorDia[dia] || [];
+          for (const itv of intervals) {
+            // find existing escala with same time and containing this day
+            const match = related.find((r: any) => r.hora_inicio.startsWith(itv.hora_inicio) && r.hora_fim.startsWith(itv.hora_fim) && (r.dias_semana || []).includes(dia));
+            const payload = {
+              ct_id: dados.ct_id,
+              modalidade_id: dados.modalidade_id,
+              profissional_id: dados.profissional_id,
+              dias_semana: [dia],
+              hora_inicio: itv.hora_inicio,
+              hora_fim: itv.hora_fim,
+            } as any;
+            if (match) {
+              await atualizarMut.mutateAsync({ id: match.id, dados: payload });
+            } else {
+              await criarMut.mutateAsync(payload);
+            }
+          }
+        }
+        setEditingGroup(null);
+      } else if (editingId) {
+        // fallback: update single escala (preserve previous behavior)
+        const dia = dias[0];
         const intervals = horariosPorDia[dia] || [];
-        for (const itv of intervals) {
-          const payload: CriarEscalaPayload = {
-            ct_id: dados.ct_id,
-            modalidade_id: dados.modalidade_id,
-            profissional_id: dados.profissional_id,
-            dias_semana: [dia],
-            hora_inicio: itv.hora_inicio,
-            hora_fim: itv.hora_fim,
-          } as CriarEscalaPayload;
-          await criarMut.mutateAsync(payload);
+        if (intervals.length === 0) {
+          alert(`Defina pelo menos um horário para o dia ${DIAS_SEMANA.find(d => d.valor===dia)?.label || dia}`);
+          return;
+        }
+        const itv = intervals[0];
+        const payload = {
+          ct_id: dados.ct_id,
+          modalidade_id: dados.modalidade_id,
+          profissional_id: dados.profissional_id,
+          dias_semana: [dia],
+          hora_inicio: itv.hora_inicio,
+          hora_fim: itv.hora_fim,
+        } as any;
+        await atualizarMut.mutateAsync({ id: editingId, dados: payload });
+        setEditingId(null);
+      } else {
+        for (const dia of dias) {
+          const intervals = horariosPorDia[dia] || [];
+          for (const itv of intervals) {
+            const payload: CriarEscalaPayload = {
+              ct_id: dados.ct_id,
+              modalidade_id: dados.modalidade_id,
+              profissional_id: dados.profissional_id,
+              dias_semana: [dia],
+              hora_inicio: itv.hora_inicio,
+              hora_fim: itv.hora_fim,
+            } as CriarEscalaPayload;
+            await criarMut.mutateAsync(payload);
+          }
         }
       }
+
       reset({ dias_semana: [] } as CriarEscalaPayload);
       setHorariosPorDia({});
     } catch (err) {
       return;
     }
+  };
+
+  const startEdit = (e: any) => {
+    // populate form with escala/group data
+    setEditingId(null);
+    setEditingGroup({ ct_id: e.ct_id, modalidade_id: e.modalidade_id, profissional_id: e.profissional_id });
+    setValue('ct_id', e.ct_id);
+    setValue('modalidade_id', e.modalidade_id);
+    setValue('profissional_id', e.profissional_id);
+    // build horariosPorDia from all escalas matching this group
+    const related = escalas.filter((x: any) => x.ct_id === e.ct_id && x.modalidade_id === e.modalidade_id && x.profissional_id === e.profissional_id);
+    const byDia: Record<number, Array<{ hora_inicio: string; hora_fim: string }>> = {};
+    for (const r of related) {
+      const dias = Array.isArray(r.dias_semana) ? r.dias_semana : [];
+      for (const d of dias) {
+        if (!byDia[d]) byDia[d] = [];
+        byDia[d].push({ hora_inicio: r.hora_inicio.slice(0,5), hora_fim: r.hora_fim.slice(0,5) });
+      }
+    }
+    setValue('dias_semana', Object.keys(byDia).map(Number));
+    setHorariosPorDia(byDia);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    reset({ dias_semana: [] } as CriarEscalaPayload);
+    setHorariosPorDia({});
   };
 
   const toggleDiaSemana = (dia: number) => {
@@ -96,6 +175,13 @@ const Escalas: React.FC = () => {
       ? selecionados.filter((d) => d !== dia)
       : [...selecionados, dia];
     setValue('dias_semana', proximo, { shouldValidate: true, shouldDirty: true });
+    // ensure there's at least one intervalo for the newly selected day
+    if (!selecionados.includes(dia)) {
+      setHorariosPorDia((prev) => {
+        if (prev[dia] && prev[dia].length > 0) return prev;
+        return { ...prev, [dia]: [{ hora_inicio: '08:00', hora_fim: '09:00' }] };
+      });
+    }
   };
 
   // State to hold multiple intervals per selected day
@@ -127,6 +213,18 @@ const Escalas: React.FC = () => {
   };
 
   const isLoadingDependencias = isLoadingCts || isLoadingModalidades || isLoadingProfissionais;
+
+  const aplicarFiltro = () => {
+    const f: Record<string, any> = {};
+    // read selected filter values from form fields
+    const ctSel = watch('ct_id');
+    const modSel = watch('modalidade_id');
+    const profSel = watch('profissional_id');
+    if (ctSel) f.ct_id = ctSel;
+    if (modSel) f.modalidade_id = modSel;
+    if (profSel) f.profissional_id = profSel;
+    setFilters(f);
+  };
 
   return (
     <div className="p-4">
@@ -216,6 +314,7 @@ const Escalas: React.FC = () => {
 
         <div className="mt-4">
           <button type="submit" disabled={isSubmitting || isLoadingDependencias} className="btn btn-primary">{isSubmitting ? 'Salvando...' : 'Salvar'}</button>
+          <button type="button" onClick={aplicarFiltro} className="btn btn-secondary ml-2">Pesquisar</button>
         </div>
       </form>
 
@@ -225,30 +324,55 @@ const Escalas: React.FC = () => {
       {isError && <p>Erro ao carregar escalas.</p>}
       {!isLoading && escalas.length === 0 && <p>Nenhuma escala cadastrada.</p>}
       {escalas.length > 0 && (
-        <table className="min-w-full bg-white">
+        (() => {
+          const groups = (() => {
+            const map = new Map();
+            for (const r of escalas) {
+              const key = `${r.ct_id}|${r.modalidade_id}|${r.profissional_id}`;
+              if (!map.has(key)) {
+                map.set(key, { ct_id: r.ct_id, modalidade_id: r.modalidade_id, profissional_id: r.profissional_id, escalas: [] });
+              }
+              map.get(key).escalas.push(r);
+            }
+            return Array.from(map.values());
+          })();
+
+          return (
+            <table className="min-w-full bg-white">
           <thead>
             <tr>
               <th className="px-4 py-2">CT</th>
               <th className="px-4 py-2">Modalidade</th>
               <th className="px-4 py-2">Profissional</th>
               <th className="px-4 py-2">Dias</th>
-              <th className="px-4 py-2">Horário</th>
+              <th className="px-4 py-2">Horários</th>
               <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {escalas.map((e: any) => (
-              <tr key={e.id}>
-                <td className="px-4 py-2">{ctsMap.get(e.ct_id) || e.ct_id}</td>
-                <td className="px-4 py-2">{modalidadesMap.get(e.modalidade_id) || e.modalidade_id}</td>
-                <td className="px-4 py-2">{profissionaisMap.get(e.profissional_id) || e.profissional_id}</td>
-                <td className="px-4 py-2">{(e.dias_semana || []).map((d: number) => DIAS_SEMANA.find((x) => x.valor === d)?.label || d).join(', ')}</td>
-                <td className="px-4 py-2">{e.hora_inicio} - {e.hora_fim}</td>
-                <td className="px-4 py-2">{e.ativo ? 'Ativo' : 'Inativo'}</td>
-              </tr>
-            ))}
+            {groups.map((g: any, gi: number) => {
+              const allDias = Array.from(new Set(g.escalas.flatMap((s: any) => s.dias_semana || []))).sort((a: number, b: number) => a - b);
+              return (
+                <tr key={gi}>
+                  <td className="px-4 py-2">{ctsMap.get(g.ct_id) || g.ct_id}</td>
+                  <td className="px-4 py-2">{modalidadesMap.get(g.modalidade_id) || g.modalidade_id}</td>
+                  <td className="px-4 py-2">{profissionaisMap.get(g.profissional_id) || g.profissional_id}</td>
+                  <td className="px-4 py-2">{allDias.map((d: number) => DIAS_SEMANA.find((x) => x.valor === d)?.label || d).join(', ')}</td>
+                  <td className="px-4 py-2">
+                    {g.escalas.map((s: any, idx: number) => (
+                      <div key={idx} className="text-sm">{s.hora_inicio.slice(0,5)} - {s.hora_fim.slice(0,5)} ({(s.dias_semana||[]).map((d:number)=>DIAS_SEMANA.find(x=>x.valor===d)?.label).join(', ')})</div>
+                    ))}
+                  </td>
+                  <td className="px-4 py-2">{g.escalas.some((s:any)=>s.ativo) ? 'Ativo' : 'Inativo'}</td>
+                  <td className="px-4 py-2"><button type="button" onClick={() => startEdit(g)} className="btn btn-sm">Editar</button></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+          );
+        })()
       )}
     </div>
   );

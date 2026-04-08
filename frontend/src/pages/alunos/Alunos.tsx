@@ -79,60 +79,70 @@ const Alunos: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Alunos</h1>
-        <button onClick={() => { setShowForm(true); setEditing(null); reset(); }} className="btn btn-primary">Novo Aluno</button>
+    <div className="page-wrapper">
+      <div className="page-header">
+        <h1 className="page-title">Alunos</h1>
+        <button onClick={() => { setShowForm(true); setEditing(null); reset(); }} className="btn btn-primary">+ Novo Aluno</button>
       </div>
 
-      {isLoading && <p>Carregando...</p>}
-      {isError && <p>Erro ao carregar alunos.</p>}
+      {isLoading && <p className="state-loading">Carregando...</p>}
+      {isError && <p className="alert-error">Erro ao carregar alunos.</p>}
 
-      {!isLoading && alunos.length === 0 && <p>Nenhum aluno cadastrado.</p>}
+      {!isLoading && alunos.length === 0 && !showForm && (
+        <div className="card card-body state-empty">Nenhum aluno cadastrado.</div>
+      )}
 
       {alunos.length > 0 && (
-        <table className="min-w-full bg-white">
-          <thead>
-            <tr>
-              <th className="px-4 py-2">Nome</th>
-              <th className="px-4 py-2">CPF</th>
-              <th className="px-4 py-2">Telefone</th>
-              <th className="px-4 py-2">CT</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {alunos.map((a: any) => (
-              <tr key={a.id} className="border-t">
-                <td className="px-4 py-2">{a.nome}</td>
-                <td className="px-4 py-2">{a.cpf || '-'}</td>
-                <td className="px-4 py-2">{a.telefone || '-'}</td>
-                <td className="px-4 py-2">{(a.ct_id != null && ctById[String(a.ct_id)]) ? ctById[String(a.ct_id)] : '-'}</td>
-                <td className="px-4 py-2">{a.ativo ? 'Ativo' : 'Inativo'}</td>
-                <td className="px-4 py-2">
-                  <button onClick={() => handleEdit(a.id)} className="btn btn-secondary mr-2">Editar</button>
-                    {a.ativo ? (
-                      <button onClick={() => { if (confirm('Confirma desativar?')) desativar.mutate(a.id); }} className="btn btn-danger">Desativar</button>
-                    ) : (
-                      <button onClick={() => { if (confirm('Confirma ativar?')) ativar.mutate(a.id); }} className="btn btn-success">Ativar</button>
-                    )}
-                </td>
+        <div className="table-wrapper">
+          <table className="table-base">
+            <thead>
+              <tr>
+                <th className="table-th">Nome</th>
+                <th className="table-th">CPF</th>
+                <th className="table-th">Telefone</th>
+                <th className="table-th">CT</th>
+                <th className="table-th">Status</th>
+                <th className="table-th">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {alunos.map((a: any) => (
+                <tr key={a.id} className="table-row">
+                  <td className="table-td font-medium text-gray-900">{a.nome}</td>
+                  <td className="table-td">{a.cpf || '-'}</td>
+                  <td className="table-td">{a.telefone || '-'}</td>
+                  <td className="table-td">{(a.ct_id != null && ctById[String(a.ct_id)]) ? ctById[String(a.ct_id)] : '-'}</td>
+                  <td className="table-td">
+                    <span className={a.ativo ? 'badge-active' : 'badge-inactive'}>
+                      {a.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="table-td">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleEdit(a.id)} className="btn btn-sm btn-secondary">Editar</button>
+                      {a.ativo ? (
+                        <button onClick={() => { if (confirm('Confirma desativar?')) desativar.mutate(a.id); }} className="btn btn-sm btn-danger">Desativar</button>
+                      ) : (
+                        <button onClick={() => { if (confirm('Confirma ativar?')) ativar.mutate(a.id); }} className="btn btn-sm btn-success">Ativar</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {showForm && (
-        <div className="mt-4 p-4 border rounded bg-gray-50">
+        <div className="mt-5 card card-body">
+          <h2 className="text-base font-semibold text-gray-800 mb-4">{editing ? 'Editar Aluno' : 'Novo Aluno'}</h2>
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* CT selector: always show the select so user chooses by name. */}
-            <div className="mb-2">
-              <label className="block" htmlFor="ct_select">Centro de Treinamento</label>
+            <div className="form-group">
+              <label className="form-label" htmlFor="ct_select">Centro de Treinamento</label>
               <select
                 id="ct_select"
-                className="input"
+                className="form-select"
                 value={selectedCtId ?? ''}
                 onChange={(e) => setSelectedCtId(Number(e.target.value) || null)}
                 aria-label="Centro de Treinamento"
@@ -140,9 +150,7 @@ const Alunos: React.FC = () => {
                 {ctsLoading ? (
                   <option value="">Carregando CTs...</option>
                 ) : cts.length === 0 ? (
-                  <>
-                    <option value="">Nenhum CT cadastrado</option>
-                  </>
+                  <option value="">Nenhum CT cadastrado</option>
                 ) : (
                   <>
                     <option value="">Selecione um CT</option>
@@ -153,51 +161,48 @@ const Alunos: React.FC = () => {
                 )}
               </select>
             </div>
-            <div className="mb-2">
-              <label className="block" htmlFor="nome">Nome</label>
-              <input id="nome" {...register('nome')} className="input" />
-              {errors.nome && <p className="text-red-600">{errors.nome?.message}</p>}
+            <div className="form-group">
+              <label className="form-label" htmlFor="nome">Nome</label>
+              <input id="nome" {...register('nome')} className="form-input" />
+              {errors.nome && <span className="form-error">{errors.nome?.message}</span>}
             </div>
-            <div className="mb-2 grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block" htmlFor="cpf">CPF</label>
-                <input id="cpf" className="input" {...register('cpf')} />
+                <label className="form-label" htmlFor="cpf">CPF</label>
+                <input id="cpf" className="form-input" {...register('cpf')} />
               </div>
               <div>
-                <label className="block" htmlFor="data_nascimento">Data Nascimento</label>
-                <input id="data_nascimento" type="date" {...register('data_nascimento')} className="input" />
+                <label className="form-label" htmlFor="data_nascimento">Data Nascimento</label>
+                <input id="data_nascimento" type="date" {...register('data_nascimento')} className="form-input" />
               </div>
             </div>
-            <div className="mb-2 grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block" htmlFor="telefone">Telefone</label>
-                <input id="telefone" {...register('telefone')} className="input" />
+                <label className="form-label" htmlFor="telefone">Telefone</label>
+                <input id="telefone" {...register('telefone')} className="form-input" />
               </div>
               <div>
-                <label className="block" htmlFor="email">Email</label>
-                <input id="email" {...register('email')} className="input" />
+                <label className="form-label" htmlFor="email">Email</label>
+                <input id="email" {...register('email')} className="form-input" />
               </div>
             </div>
-            <div className="mb-2">
-              <label className="block" htmlFor="nome_responsavel">Nome do responsável</label>
-              <input id="nome_responsavel" {...register('nome_responsavel')} className="input" />
+            <div className="form-group">
+              <label className="form-label" htmlFor="nome_responsavel">Nome do responsável</label>
+              <input id="nome_responsavel" {...register('nome_responsavel')} className="form-input" />
             </div>
-            <div className="mb-2">
-              <label className="block" htmlFor="telefone_responsavel">Telefone do responsável</label>
-              <input id="telefone_responsavel" {...register('telefone_responsavel')} className="input" />
+            <div className="form-group">
+              <label className="form-label" htmlFor="telefone_responsavel">Telefone do responsável</label>
+              <input id="telefone_responsavel" {...register('telefone_responsavel')} className="form-input" />
             </div>
-            <div className="flex items-center gap-2 mt-4">
-              <button
-                type="submit"
-                disabled={isSubmitting || (!ctsLoading && cts.length === 0)}
-                className="btn btn-primary"
-              >{editing ? 'Salvar' : 'Criar'}</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn">Cancelar</button>
+            <div className="flex items-center gap-2 pt-2">
+              <button type="submit" disabled={isSubmitting || (!ctsLoading && cts.length === 0)} className="btn btn-primary">
+                {editing ? 'Salvar' : 'Criar'}
+              </button>
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn btn-secondary">Cancelar</button>
             </div>
           </form>
         </div>
       )}
-
     </div>
   );
 };

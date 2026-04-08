@@ -2,18 +2,36 @@ const conexao = require('../../../shared/database/connection');
 const AppError = require('../../../shared/errors/AppError');
 
 class EscalasRepository {
-  async listar({ limite, offset, accountId }) {
+  async listar({ limite, offset, accountId, filtros = {} }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
 
-    const filtros = ['e.account_id = ?'];
+    const whereClauses = ['e.account_id = ?'];
     const params = [accountId];
 
-    const where = ` WHERE ${filtros.join(' AND ')}`;
-    const consulta = `SELECT e.*, GROUP_CONCAT(ed.dia_semana) AS dias_semana FROM escalas e LEFT JOIN escala_dias ed ON ed.escala_id = e.id ${where} GROUP BY e.id ORDER BY e.id DESC LIMIT ? OFFSET ?`;
+    if (filtros.ct_id) {
+      whereClauses.push('e.ct_id = ?');
+      params.push(filtros.ct_id);
+    }
+    if (filtros.modalidade_id) {
+      whereClauses.push('e.modalidade_id = ?');
+      params.push(filtros.modalidade_id);
+    }
+    if (filtros.profissional_id) {
+      whereClauses.push('e.profissional_id = ?');
+      params.push(filtros.profissional_id);
+    }
+    // filter by day(s) via escala_dias
+    if (filtros.dia_semana && Array.isArray(filtros.dia_semana) && filtros.dia_semana.length > 0) {
+      whereClauses.push('ed.dia_semana IN (?)');
+      params.push(filtros.dia_semana);
+    }
+
+    const where = ` WHERE ${whereClauses.join(' AND ')}`;
+    const consulta = `SELECT e.*, GROUP_CONCAT(DISTINCT ed.dia_semana) AS dias_semana FROM escalas e LEFT JOIN escala_dias ed ON ed.escala_id = e.id ${where} GROUP BY e.id ORDER BY e.id DESC LIMIT ? OFFSET ?`;
     const paramsWithLimit = params.concat([limite, offset]);
 
     const [dados] = await conexao.query(consulta, paramsWithLimit);
-    const [count] = await conexao.query(`SELECT COUNT(*) AS total FROM escalas${where}`, params);
+    const [count] = await conexao.query(`SELECT COUNT(DISTINCT e.id) AS total FROM escalas e LEFT JOIN escala_dias ed ON ed.escala_id = e.id ${where}`, params);
 
     // map dias_semana to array of numbers
     const mapped = dados.map((row) => ({
@@ -36,6 +54,23 @@ class EscalasRepository {
 
   async criar({ accountId, ctId, profissionalId, modalidadeId, diasSemana, horaInicio, horaFim }) {
     if (!accountId) throw new AppError('accountId é obrigatório', 400);
+
+    // If an identical escala (same ct/prof/modalidade and time) already exists,
+    // attach the requested days to that escala instead of creating a new row.
+    const [existentes] = await conexao.query(
+      'SELECT id FROM escalas WHERE account_id = ? AND ct_id = ? AND profissional_id = ? AND modalidade_id = ? AND hora_inicio = ? AND hora_fim = ? AND ativo = 1',
+      [accountId, ctId, profissionalId, modalidadeId, horaInicio, horaFim]
+    );
+
+    if (existentes && existentes.length > 0) {
+      const escalaId = existentes[0].id;
+      if (Array.isArray(diasSemana) && diasSemana.length > 0) {
+        const valores = diasSemana.map((d) => [escalaId, d]);
+        // use INSERT IGNORE to skip duplicate dia entries
+        await conexao.query('INSERT IGNORE INTO escala_dias (escala_id, dia_semana) VALUES ?', [valores]);
+      }
+      return { id: escalaId };
+    }
 
     const [resultado] = await conexao.query(
       'INSERT INTO escalas (account_id, ct_id, profissional_id, modalidade_id, hora_inicio, hora_fim) VALUES (?, ?, ?, ?, ?, ?)',

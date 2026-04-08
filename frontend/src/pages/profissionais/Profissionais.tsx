@@ -52,82 +52,94 @@ const Profissionais: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Profissionais</h1>
-        <button onClick={() => { setShowForm(true); setEditing(null); reset(); }} className="btn btn-primary">Novo</button>
+    <div className="page-wrapper">
+      <div className="page-header">
+        <h1 className="page-title">Profissionais</h1>
+        <button onClick={() => { setShowForm(true); setEditing(null); reset(); }} className="btn btn-primary">+ Novo</button>
       </div>
 
-      {isLoading && <p>Carregando...</p>}
-      {isError && <p>Erro ao carregar profissionais.</p>}
+      {isLoading && <p className="state-loading">Carregando...</p>}
+      {isError && <p className="alert-error">Erro ao carregar profissionais.</p>}
 
-      {!isLoading && profissionais.length === 0 && <p>Sem profissionais cadastrados.</p>}
+      {!isLoading && profissionais.length === 0 && !showForm && (
+        <div className="card card-body state-empty">Sem profissionais cadastrados.</div>
+      )}
 
       {profissionais.length > 0 && (
-        <table className="min-w-full bg-white">
-          <thead>
-            <tr>
-              <th className="px-4 py-2">Nome</th>
-              <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">Telefone</th>
-              <th className="px-4 py-2">Especialidade</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {profissionais.map((p: any) => (
-              <tr key={p.id} className="border-t">
-                <td className="px-4 py-2">{p.nome}</td>
-                <td className="px-4 py-2">{p.email || '-'}</td>
-                <td className="px-4 py-2">{p.telefone || '-'}</td>
-                <td className="px-4 py-2">{p.especialidade || '-'}</td>
-                <td className="px-4 py-2">{p.ativo ? 'Ativo' : 'Inativo'}</td>
-                <td className="px-4 py-2">
-                  <button onClick={() => handleEdit(p.id)} className="btn btn-secondary mr-2">Editar</button>
-                  {p.ativo ? (
-                    <button onClick={() => desativar.mutate(p.id)} className="btn btn-danger">Desativar</button>
-                  ) : (
-                    <button onClick={() => ativar.mutate(p.id)} className="btn btn-success">Ativar</button>
-                  )}
-                </td>
+        <div className="table-wrapper">
+          <table className="table-base">
+            <thead>
+              <tr>
+                <th className="table-th">Nome</th>
+                <th className="table-th">Email</th>
+                <th className="table-th">Telefone</th>
+                <th className="table-th">Especialidade</th>
+                <th className="table-th">Status</th>
+                <th className="table-th">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {profissionais.map((p: any) => (
+                <tr key={p.id} className="table-row">
+                  <td className="table-td font-medium text-gray-900">{p.nome}</td>
+                  <td className="table-td">{p.email || '-'}</td>
+                  <td className="table-td">{p.telefone || '-'}</td>
+                  <td className="table-td">{p.especialidade || '-'}</td>
+                  <td className="table-td">
+                    <span className={p.ativo ? 'badge-active' : 'badge-inactive'}>
+                      {p.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="table-td">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleEdit(p.id)} className="btn btn-sm btn-secondary">Editar</button>
+                      {p.ativo ? (
+                        <button onClick={() => desativar.mutate(p.id)} className="btn btn-sm btn-danger">Desativar</button>
+                      ) : (
+                        <button onClick={() => ativar.mutate(p.id)} className="btn btn-sm btn-success">Ativar</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {showForm && (
-        <div className="mt-4 p-4 border rounded bg-gray-50">
+        <div className="mt-5 card card-body">
+          <h2 className="text-base font-semibold text-gray-800 mb-4">{editing ? 'Editar Profissional' : 'Novo Profissional'}</h2>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-2">
-              <label className="block">Nome</label>
-              <input {...register('nome')} className="input" />
-              {errors.nome && <p className="text-red-600">{errors.nome.message}</p>}
+            <div className="form-group">
+              <label className="form-label">Nome</label>
+              <input {...register('nome')} className="form-input" />
+              {errors.nome && <span className="form-error">{errors.nome.message}</span>}
             </div>
-            <div className="mb-2">
-              <label className="block">Email</label>
-              <input {...register('email')} className="input" />
-              {errors.email && <p className="text-red-600">{errors.email.message}</p>}
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input {...register('email')} className="form-input" />
+              {errors.email && <span className="form-error">{errors.email.message}</span>}
             </div>
-            <div className="mb-2">
-              <label className="block">Telefone</label>
-              <input {...register('telefone')} className="input" />
-              {errors.telefone && <p className="text-red-600">{errors.telefone.message}</p>}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="form-label">Telefone</label>
+                <input {...register('telefone')} className="form-input" />
+                {errors.telefone && <span className="form-error">{errors.telefone.message}</span>}
+              </div>
+              <div>
+                <label className="form-label">Especialidade</label>
+                <input {...register('especialidade')} className="form-input" />
+                {errors.especialidade && <span className="form-error">{errors.especialidade.message}</span>}
+              </div>
             </div>
-            <div className="mb-2">
-              <label className="block">Especialidade</label>
-              <input {...register('especialidade')} className="input" />
-              {errors.especialidade && <p className="text-red-600">{errors.especialidade.message}</p>}
-            </div>
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex items-center gap-2 pt-2">
               <button type="submit" className="btn btn-primary">{editing ? 'Salvar' : 'Criar'}</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn">Cancelar</button>
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn btn-secondary">Cancelar</button>
             </div>
           </form>
         </div>
       )}
-
     </div>
   );
 };

@@ -9,8 +9,8 @@ import {
   ativarEscalaApi,
 } from '../services/api/escalasService';
 
-export const useEscalas = (page: number = 1, limit: number = 20) => {
-  return useQuery({ queryKey: ['escalas', page, limit], queryFn: () => listarEscalasApi(page, limit) });
+export const useEscalas = (page: number = 1, limit: number = 20, filters: Record<string, any> = {}) => {
+  return useQuery({ queryKey: ['escalas', page, limit, filters], queryFn: () => listarEscalasApi(page, limit, filters) });
 };
 
 export const useEscala = (id: number | null) => {

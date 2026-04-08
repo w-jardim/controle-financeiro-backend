@@ -1,8 +1,9 @@
 import api from './axios';
 import type { ListaEscalasResponse, CriarEscalaPayload, AtualizarEscalaPayload, EscalaResponse } from '../../types/escala';
 
-export const listarEscalasApi = async (page: number = 1, limit: number = 20): Promise<ListaEscalasResponse> => {
-  const response = await api.get('/escalas', { params: { page, limit } });
+export const listarEscalasApi = async (page: number = 1, limit: number = 20, filters: Record<string, any> = {}): Promise<ListaEscalasResponse> => {
+  const params: Record<string, any> = { page, limit, ...filters };
+  const response = await api.get('/escalas', { params });
   return response.data;
 };
 
