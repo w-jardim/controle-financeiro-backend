@@ -56,14 +56,36 @@ const Escalas: React.FC = () => {
   const diasSelecionados = watch('dias_semana') || [];
 
   const onSubmit = async (dados: CriarEscalaPayload) => {
+    const dias = Array.from(new Set(dados.dias_semana || [])).sort((a, b) => a - b);
+    if (dias.length === 0) return;
+
+    // Ensure intervals exist for each selected day
+    for (const dia of dias) {
+      const intervals = horariosPorDia[dia] || [];
+      if (intervals.length === 0) {
+        alert(`Defina pelo menos um horário para o dia ${DIAS_SEMANA.find(d => d.valor===dia)?.label || dia}`);
+        return;
+      }
+    }
+
     try {
-      const payload = {
-        ...dados,
-        dias_semana: Array.from(new Set(dados.dias_semana)).sort((a, b) => a - b),
-      };
-      await criarMut.mutateAsync(payload);
+      for (const dia of dias) {
+        const intervals = horariosPorDia[dia] || [];
+        for (const itv of intervals) {
+          const payload: CriarEscalaPayload = {
+            ct_id: dados.ct_id,
+            modalidade_id: dados.modalidade_id,
+            profissional_id: dados.profissional_id,
+            dias_semana: [dia],
+            hora_inicio: itv.hora_inicio,
+            hora_fim: itv.hora_fim,
+          } as CriarEscalaPayload;
+          await criarMut.mutateAsync(payload);
+        }
+      }
       reset({ dias_semana: [] } as CriarEscalaPayload);
-    } catch {
+      setHorariosPorDia({});
+    } catch (err) {
       return;
     }
   };
@@ -74,6 +96,34 @@ const Escalas: React.FC = () => {
       ? selecionados.filter((d) => d !== dia)
       : [...selecionados, dia];
     setValue('dias_semana', proximo, { shouldValidate: true, shouldDirty: true });
+  };
+
+  // State to hold multiple intervals per selected day
+  const [horariosPorDia, setHorariosPorDia] = React.useState<Record<number, Array<{hora_inicio: string; hora_fim: string}>>>({});
+
+  const addIntervalo = (dia: number) => {
+    setHorariosPorDia((prev) => {
+      const arr = prev[dia] ? [...prev[dia]] : [];
+      arr.push({ hora_inicio: '08:00', hora_fim: '09:00' });
+      return { ...prev, [dia]: arr };
+    });
+  };
+
+  const updateIntervalo = (dia: number, idx: number, field: 'hora_inicio' | 'hora_fim', value: string) => {
+    setHorariosPorDia((prev) => {
+      const arr = prev[dia] ? [...prev[dia]] : [];
+      if (!arr[idx]) return prev;
+      arr[idx] = { ...arr[idx], [field]: value };
+      return { ...prev, [dia]: arr };
+    });
+  };
+
+  const removeIntervalo = (dia: number, idx: number) => {
+    setHorariosPorDia((prev) => {
+      const arr = prev[dia] ? [...prev[dia]] : [];
+      arr.splice(idx, 1);
+      return { ...prev, [dia]: arr };
+    });
   };
 
   const isLoadingDependencias = isLoadingCts || isLoadingModalidades || isLoadingProfissionais;
@@ -137,16 +187,30 @@ const Escalas: React.FC = () => {
           </div>
           {errors.dias_semana && <p className="text-red-600 text-sm mt-1">{errors.dias_semana.message as string}</p>}
         </div>
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div>
-            <label>Hora início</label>
-            <input type="time" {...register('hora_inicio')} className="input" />
-            {errors.hora_inicio && <p className="text-red-600 text-sm mt-1">{errors.hora_inicio.message}</p>}
-          </div>
-          <div>
-            <label>Hora fim</label>
-            <input type="time" {...register('hora_fim')} className="input" />
-            {errors.hora_fim && <p className="text-red-600 text-sm mt-1">{errors.hora_fim.message}</p>}
+        <div className="mt-4">
+          <label>Horários por dia</label>
+          <div className="mt-2 space-y-3">
+            {diasSelecionados.length === 0 && <p className="text-sm text-gray-600">Selecione ao menos um dia para adicionar horários</p>}
+            {diasSelecionados.map((dia: number) => (
+              <div key={dia} className="p-3 border rounded">
+                <div className="flex items-center justify-between mb-2">
+                  <strong>{DIAS_SEMANA.find(d => d.valor === dia)?.label || dia}</strong>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => addIntervalo(dia)} className="btn btn-sm">Adicionar intervalo</button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {(horariosPorDia[dia] || []).map((itv, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input type="time" value={itv.hora_inicio} onChange={(e) => updateIntervalo(dia, idx, 'hora_inicio', e.target.value)} className="input w-32" />
+                      <span>—</span>
+                      <input type="time" value={itv.hora_fim} onChange={(e) => updateIntervalo(dia, idx, 'hora_fim', e.target.value)} className="input w-32" />
+                      <button type="button" onClick={() => removeIntervalo(dia, idx)} className="btn btn-danger">Remover</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
