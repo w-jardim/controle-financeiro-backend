@@ -92,10 +92,10 @@ describe('Modalidades', () => {
     render(<Modalidades />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText('Nova Modalidade')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Nova Modalidade/i })).toBeInTheDocument();
     });
 
-    const botaoNovo = screen.getByText('Nova Modalidade');
+    const botaoNovo = screen.getByRole('button', { name: /Nova Modalidade/i });
     await user.click(botaoNovo);
 
     await waitFor(() => {
@@ -121,10 +121,10 @@ describe('Modalidades', () => {
     render(<Modalidades />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText('Nova Modalidade')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Nova Modalidade/i })).toBeInTheDocument();
     });
 
-    const botaoNovo = screen.getByText('Nova Modalidade');
+    const botaoNovo = screen.getByRole('button', { name: /Nova Modalidade/i });
     await user.click(botaoNovo);
 
     const inputNome = screen.getByLabelText(/Nome/i);
@@ -159,10 +159,10 @@ describe('Modalidades', () => {
     render(<Modalidades />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText('Nova Modalidade')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Nova Modalidade/i })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText('Nova Modalidade'));
+    await user.click(screen.getByRole('button', { name: /Nova Modalidade/i }));
     const inputNome = screen.getByLabelText(/Nome/i);
     await user.type(inputNome, 'Duplicada');
     await user.click(screen.getByText('Salvar'));

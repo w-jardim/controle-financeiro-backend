@@ -330,4 +330,94 @@ profissional_id: prof.body.dados.id,
     const matched = list.body.dados.filter(a => a.horario_aula_id === horario.body.dados.id && String(a.data_aula).substring(0, 10) === '2026-05-01');
     expect(matched.length).toBe(1);
   });
+
+  it('atualizar agendamento com PUT', async () => {
+    const { token } = await criarContaELogar();
+    const ctId = await criarCt(token);
+
+    const aluno = await request(app)
+      .post('/alunos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Aluno PUT', ct_id: ctId });
+
+    const prof = await request(app)
+      .post('/profissionais')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Prof PUT' });
+
+    const mod = await request(app)
+      .post('/modalidades')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Mod PUT' });
+
+    const horario = await request(app)
+      .post('/horarios-aula')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        ct_id: ctId,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
+        dia_semana: 3,
+        hora_inicio: '07:00:00',
+        hora_fim: '08:00:00',
+      });
+
+    const created = await request(app)
+      .post('/agendamentos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-06-03' });
+
+    expect(created.status).toBe(201);
+
+    const res = await request(app)
+      .put(`/agendamentos/${created.body.dados.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ observacao: 'Observação atualizada' });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('status inválido retorna 400', async () => {
+    const { token } = await criarContaELogar();
+    const ctId = await criarCt(token);
+
+    const aluno = await request(app)
+      .post('/alunos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Aluno SI', ct_id: ctId });
+
+    const prof = await request(app)
+      .post('/profissionais')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Prof SI' });
+
+    const mod = await request(app)
+      .post('/modalidades')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ nome: 'Mod SI' });
+
+    const horario = await request(app)
+      .post('/horarios-aula')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        ct_id: ctId,
+        profissional_id: prof.body.dados.id,
+        modalidade_id: mod.body.dados.id,
+        dia_semana: 4,
+        hora_inicio: '11:00:00',
+        hora_fim: '12:00:00',
+      });
+
+    const created = await request(app)
+      .post('/agendamentos')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ aluno_id: aluno.body.dados.id, horario_aula_id: horario.body.dados.id, data_aula: '2026-06-04' });
+
+    const res = await request(app)
+      .patch(`/agendamentos/${created.body.dados.id}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'status_invalido' });
+
+    expect(res.status).toBe(400);
+  });
 });

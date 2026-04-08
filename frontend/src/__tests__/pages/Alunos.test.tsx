@@ -24,6 +24,7 @@ describe('Alunos', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.confirm = vi.fn(() => true) as unknown as (message?: string) => boolean;
+    vi.mocked(ctsService.listarCtsApi).mockResolvedValue({ dados: [] });
   });
 
   it('renderiza lista vazia', async () => {
@@ -59,8 +60,8 @@ describe('Alunos', () => {
     const user = userEvent.setup();
     render(<Alunos />, { wrapper: createWrapper() });
 
-    await waitFor(() => expect(screen.getByText('Novo Aluno')).toBeInTheDocument());
-    await user.click(screen.getByText('Novo Aluno'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Novo Aluno/i })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /Novo Aluno/i }));
 
     // CT select must be visible and show the CT name when only one CT exists
     const ctSelect = screen.getByLabelText('Centro de Treinamento') as HTMLSelectElement;

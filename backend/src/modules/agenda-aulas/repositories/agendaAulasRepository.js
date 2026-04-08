@@ -13,7 +13,7 @@ class AgendaAulasRepository {
     const paramsWithLimit = params.concat([limite, offset]);
 
     const [dados] = await conexao.query(consulta, paramsWithLimit);
-    const [count] = await conexao.query(`SELECT COUNT(*) AS total FROM agenda_aulas${where}`, params);
+    const [count] = await conexao.query(`SELECT COUNT(*) AS total FROM agenda_aulas a${where}`, params);
 
     return { dados, total: Number(count[0].total) };
   }

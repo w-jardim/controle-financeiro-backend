@@ -75,8 +75,9 @@ export default function Login() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="form-group">
-              <label className="form-label">Email</label>
+              <label className="form-label" htmlFor="email">Email</label>
               <input
+                id="email"
                 type="email"
                 className="form-input"
                 placeholder="seu@email.com"
@@ -87,8 +88,9 @@ export default function Login() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Senha</label>
+              <label className="form-label" htmlFor="senha">Senha</label>
               <input
+                id="senha"
                 type="password"
                 className="form-input"
                 placeholder="••••••••"
