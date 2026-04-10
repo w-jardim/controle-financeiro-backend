@@ -24,38 +24,38 @@ const EscalaForm: React.FC<Props> = ({ onSuccess, initialValues }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit(onSubmit)} className="card mb-6 space-y-3">
       <div>
         <label>CT ID</label>
         <input type="number" {...register('ct_id', { valueAsNumber: true })} />
-        {errors.ct_id && <span>{errors.ct_id.message}</span>}
+        {errors.ct_id && <span className="text-xs text-brand-danger">{errors.ct_id.message}</span>}
       </div>
       <div>
         <label>Modalidade ID</label>
         <input type="number" {...register('modalidade_id', { valueAsNumber: true })} />
-        {errors.modalidade_id && <span>{errors.modalidade_id.message}</span>}
+        {errors.modalidade_id && <span className="text-xs text-brand-danger">{errors.modalidade_id.message}</span>}
       </div>
       <div>
         <label>Profissional ID</label>
         <input type="number" {...register('profissional_id', { valueAsNumber: true })} />
-        {errors.profissional_id && <span>{errors.profissional_id.message}</span>}
+        {errors.profissional_id && <span className="text-xs text-brand-danger">{errors.profissional_id.message}</span>}
       </div>
       <div>
         <label>Dias da semana (ex: 0,1,2)</label>
         <input type="text" {...register('dias_semana', { setValueAs: (v) => (typeof v === 'string' ? v.split(',').map((s) => Number(s.trim())) : v) })} />
-        {errors.dias_semana && <span>{errors.dias_semana.message}</span>}
+        {errors.dias_semana && <span className="text-xs text-brand-danger">{errors.dias_semana.message}</span>}
       </div>
       <div>
         <label>Hora início (HH:MM)</label>
-        <input type="text" {...register('hora_inicio')} />
-        {errors.hora_inicio && <span>{errors.hora_inicio.message}</span>}
+        <input type="time" {...register('hora_inicio')} />
+        {errors.hora_inicio && <span className="text-xs text-brand-danger">{errors.hora_inicio.message}</span>}
       </div>
       <div>
         <label>Hora fim (HH:MM)</label>
-        <input type="text" {...register('hora_fim')} />
-        {errors.hora_fim && <span>{errors.hora_fim.message}</span>}
+        <input type="time" {...register('hora_fim')} />
+        {errors.hora_fim && <span className="text-xs text-brand-danger">{errors.hora_fim.message}</span>}
       </div>
-      <button type="submit" disabled={isSubmitting}>Salvar</button>
+      <button type="submit" disabled={isSubmitting} className="btn btn-primary">Salvar</button>
     </form>
   );
 };

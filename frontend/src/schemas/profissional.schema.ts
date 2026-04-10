@@ -1,13 +1,11 @@
 import { z } from 'zod';
 
-export const criarProfissionalSchema = z.object({
-  nome: z.string().trim().min(1, 'Nome é obrigatório'),
-  email: z.string().email('Email inválido').optional(),
+const profissionalBaseSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório'),
   telefone: z.string().optional(),
-  especialidade: z.string().optional(),
+  email: z.string().email('Email inválido').optional(),
 });
 
-export const atualizarProfissionalSchema = criarProfissionalSchema.partial();
+export const criarProfissionalSchema = profissionalBaseSchema;
 
-export type CriarProfissionalFormData = z.infer<typeof criarProfissionalSchema>;
-export type AtualizarProfissionalFormData = z.infer<typeof atualizarProfissionalSchema>;
+export const atualizarProfissionalSchema = profissionalBaseSchema.partial();

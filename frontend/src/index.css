@@ -2,10 +2,217 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
-  height: 100%;
+/* ── Base ─────────────────────────────────────────── */
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-brand-bg text-brand-text antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0B0B0B; }
+  ::-webkit-scrollbar-thumb { background: #2B2B2B; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3B82F6; }
 }
 
-body {
-  @apply bg-gray-50 text-gray-900;
+/* ── Components ───────────────────────────────────── */
+
+@layer components {
+
+  /* ─ Buttons ─ */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 text-sm font-medium rounded-lg
+           transition-all duration-150 ease-in-out
+           border border-brand-border bg-brand-surface text-brand-text
+           hover:bg-brand-border focus:outline-none focus:ring-2 focus:ring-brand-primary/40
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply bg-brand-primary border-brand-primary text-white
+           hover:bg-brand-primary-hover hover:border-brand-primary-hover
+           focus:ring-brand-primary/50;
+  }
+
+  .btn-secondary {
+    @apply bg-brand-surface border-brand-border text-brand-text
+           hover:bg-brand-border;
+  }
+
+  .btn-danger {
+    @apply bg-brand-danger border-brand-danger text-white
+           hover:bg-brand-danger-hover hover:border-brand-danger-hover
+           focus:ring-brand-danger/50;
+  }
+
+  .btn-success {
+    @apply bg-brand-success border-brand-success text-white
+           hover:bg-brand-success-hover hover:border-brand-success-hover
+           focus:ring-brand-success/50;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent border-transparent text-brand-muted
+           hover:text-brand-text hover:bg-brand-surface;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  /* ─ Form Controls ─ */
+  .input,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    @apply w-full px-3 py-2 text-sm
+           bg-brand-bg border border-brand-border rounded-lg
+           text-brand-text placeholder-brand-muted
+           transition-colors duration-150
+           focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/40
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* ─ Labels ─ */
+  label {
+    @apply block text-sm font-medium text-brand-muted mb-1;
+  }
+
+  /* ─ Cards / Surfaces ─ */
+  .card {
+    @apply bg-brand-surface border border-brand-border rounded-xl p-6;
+  }
+
+  /* ─ Tables ─ */
+  .table-container {
+    @apply bg-brand-surface border border-brand-border rounded-xl overflow-hidden;
+  }
+
+  table {
+    @apply w-full text-sm;
+  }
+
+  thead {
+    @apply border-b border-brand-border;
+  }
+
+  thead th {
+    @apply px-4 py-3 text-left text-xs font-semibold
+           text-brand-muted uppercase tracking-wider;
+  }
+
+  tbody tr {
+    @apply border-b border-brand-border/50
+           transition-colors hover:bg-brand-bg/50;
+  }
+
+  tbody td {
+    @apply px-4 py-3 text-sm text-brand-text;
+  }
+
+  /* ─ Badges ─ */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full
+           text-xs font-medium;
+  }
+
+  .badge-active {
+    @apply bg-brand-success/15 text-brand-success;
+  }
+
+  .badge-inactive {
+    @apply bg-brand-muted/15 text-brand-muted;
+  }
+
+  .badge-danger {
+    @apply bg-brand-danger/15 text-brand-danger;
+  }
+
+  .badge-primary {
+    @apply bg-brand-primary/15 text-brand-primary;
+  }
+
+  /* ─ Modals / Overlays ─ */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm
+           flex items-center justify-center z-50;
+  }
+
+  .modal-content {
+    @apply bg-brand-surface border border-brand-border
+           rounded-xl p-6 w-full max-w-md shadow-2xl;
+  }
+
+  /* ─ Alert / Feedback ─ */
+  .alert {
+    @apply rounded-lg border px-4 py-3 text-sm;
+  }
+
+  .alert-error {
+    @apply bg-brand-danger/10 border-brand-danger/30 text-red-400;
+  }
+
+  .alert-success {
+    @apply bg-brand-success/10 border-brand-success/30 text-green-400;
+  }
+
+  .alert-warning {
+    @apply bg-brand-premium/10 border-brand-premium/30 text-yellow-400;
+  }
+
+  /* ─ Toast ─ */
+  .toast {
+    @apply fixed top-4 right-4 z-50 rounded-lg border px-4 py-3 text-sm
+           shadow-lg animate-pulse;
+  }
+
+  .toast-success {
+    @apply bg-brand-success/10 border-brand-success/30 text-green-400;
+  }
+
+  .toast-error {
+    @apply bg-brand-danger/10 border-brand-danger/30 text-red-400;
+  }
+
+  /* ─ Page header ─ */
+  .page-header {
+    @apply flex items-center justify-between mb-6;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-brand-text;
+  }
+
+  /* ─ Empty state ─ */
+  .empty-state {
+    @apply text-center py-12 text-brand-muted;
+  }
+
+  /* ─ Pagination ─ */
+  .pagination {
+    @apply flex justify-center items-center gap-3 mt-6;
+  }
+
+  .pagination-info {
+    @apply text-sm text-brand-muted;
+  }
 }
+

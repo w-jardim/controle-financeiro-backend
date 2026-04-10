@@ -59,95 +59,102 @@ const Horarios: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Horários</h1>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Horários</h1>
         <button onClick={() => { reset(); setEditingId(null); setShowForm(true); }} className="btn btn-primary">Novo Horário</button>
       </div>
 
-      {isLoading && <p>Carregando...</p>}
-      {isError && <p>Erro ao carregar horários.</p>}
+      {isLoading && <p className="text-brand-muted">Carregando...</p>}
+      {isError && <p className="text-brand-danger">Erro ao carregar horários.</p>}
 
-      {!isLoading && horarios.length === 0 && <p>Nenhum horário cadastrado.</p>}
+      {!isLoading && horarios.length === 0 && <div className="empty-state">Nenhum horário cadastrado.</div>}
 
       {horarios.length > 0 && (
-        <table className="min-w-full bg-white">
+        <div className="table-container">
+        <table>
           <thead>
             <tr>
-              <th className="px-4 py-2">Modalidade</th>
-              <th className="px-4 py-2">Profissional</th>
-              <th className="px-4 py-2">Dia</th>
-              <th className="px-4 py-2">Horário</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Ações</th>
+              <th>Modalidade</th>
+              <th>Profissional</th>
+              <th>Dia</th>
+              <th>Horário</th>
+              <th>Status</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             {horarios.map((h: any) => (
-              <tr key={h.id} className="border-t">
-                <td className="px-4 py-2">{modalidades.find(m => m.id === h.modalidade_id)?.nome || h.modalidade_id}</td>
-                <td className="px-4 py-2">{profissionais.find(p => p.id === h.profissional_id)?.nome || h.profissional_id}</td>
-                <td className="px-4 py-2">{dias[h.dia_semana]}</td>
-                <td className="px-4 py-2">{h.hora_inicio} - {h.hora_fim}</td>
-                <td className="px-4 py-2">{h.ativo ? 'Ativo' : 'Inativo'}</td>
-                <td className="px-4 py-2">
-                  <button onClick={() => handleEdit(h)} className="btn btn-secondary mr-2">Editar</button>
+              <tr key={h.id}>
+                <td>{modalidades.find(m => m.id === h.modalidade_id)?.nome || h.modalidade_id}</td>
+                <td>{profissionais.find(p => p.id === h.profissional_id)?.nome || h.profissional_id}</td>
+                <td>{dias[h.dia_semana]}</td>
+                <td>{h.hora_inicio} - {h.hora_fim}</td>
+                <td><span className={h.ativo ? 'badge badge-active' : 'badge badge-inactive'}>{h.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td>
+                  <div className="flex items-center gap-2">
+                  <button onClick={() => handleEdit(h)} className="btn btn-secondary btn-sm">Editar</button>
                   {h.ativo ? (
-                    <button onClick={() => { if (confirm('Confirma desativar?')) desativarMut.mutate(h.id); }} className="btn btn-danger">Desativar</button>
+                    <button onClick={() => { if (confirm('Confirma desativar?')) desativarMut.mutate(h.id); }} className="btn btn-danger btn-sm">Desativar</button>
                   ) : (
-                    <button onClick={() => { if (confirm('Confirma ativar?')) ativarMut.mutate(h.id); }} className="btn btn-success">Ativar</button>
+                    <button onClick={() => { if (confirm('Confirma ativar?')) ativarMut.mutate(h.id); }} className="btn btn-success btn-sm">Ativar</button>
                   )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       {showForm && (
-        <div className="mt-4 p-4 border rounded bg-gray-50">
+        <div className="modal-overlay">
+        <div className="modal-content max-w-lg">
+          <h2 className="text-xl font-bold text-brand-text mb-4">{editingId ? 'Editar Horário' : 'Novo Horário'}</h2>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-2">
-              <label className="block" htmlFor="modalidade">Modalidade</label>
-              <select id="modalidade" className="input" {...register('modalidade_id')}> 
+            <div className="mb-3">
+              <label htmlFor="modalidade">Modalidade</label>
+              <select id="modalidade" {...register('modalidade_id')}> 
                 <option value="">Selecione uma modalidade</option>
                 {modalidades.map((m: any) => <option key={m.id} value={m.id}>{m.nome}</option>)}
               </select>
-              {errors.modalidade_id && <p className="text-red-600">{errors.modalidade_id?.message as any}</p>}
+              {errors.modalidade_id && <p className="text-xs text-brand-danger mt-1">{errors.modalidade_id?.message as any}</p>}
             </div>
 
-            <div className="mb-2">
-              <label className="block" htmlFor="profissional">Profissional</label>
-              <select id="profissional" className="input" {...register('profissional_id')}>
+            <div className="mb-3">
+              <label htmlFor="profissional">Profissional</label>
+              <select id="profissional" {...register('profissional_id')}>
                 <option value="">Selecione um profissional</option>
                 {profissionais.map((p: any) => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>
-              {errors.profissional_id && <p className="text-red-600">{errors.profissional_id?.message as any}</p>}
+              {errors.profissional_id && <p className="text-xs text-brand-danger mt-1">{errors.profissional_id?.message as any}</p>}
             </div>
 
-            <div className="mb-2 grid grid-cols-3 gap-2">
+            <div className="mb-3 grid grid-cols-3 gap-3">
               <div>
-                <label className="block">Dia da semana</label>
-                <select {...register('dia_semana')} className="input">
+                <label>Dia da semana</label>
+                <select {...register('dia_semana')}>
                   <option value="">Selecione</option>
                   {dias.map((d, i) => <option key={i} value={i}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block">Hora início</label>
-                <input type="time" {...register('hora_inicio')} className="input" />
+                <label>Hora início</label>
+                <input type="time" {...register('hora_inicio')} />
               </div>
               <div>
-                <label className="block">Hora fim</label>
-                <input type="time" {...register('hora_fim')} className="input" />
+                <label>Hora fim</label>
+                <input type="time" {...register('hora_fim')} />
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex justify-end gap-3 mt-4">
+              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); reset(); }} className="btn btn-secondary">Cancelar</button>
               <button type="submit" disabled={isSubmitting} className="btn btn-primary">{editingId ? 'Salvar' : 'Criar'}</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); reset(); }} className="btn">Cancelar</button>
             </div>
           </form>
+        </div>
         </div>
       )}
     </div>

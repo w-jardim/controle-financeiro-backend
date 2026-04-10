@@ -26,3 +26,7 @@ build/
 
 # Docker
 .dockerignore
+
+.env
+node_modules/
+dist/
