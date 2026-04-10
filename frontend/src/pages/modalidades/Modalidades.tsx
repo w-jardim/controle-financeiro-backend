@@ -99,99 +99,87 @@ export default function Modalidades() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-600">Carregando...</div>
+        <div className="text-brand-muted">Carregando...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded p-4">
-        <p className="text-red-800">Erro ao carregar modalidades</p>
+      <div className="alert alert-error">
+        <p>Erro ao carregar modalidades</p>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Modalidades</h1>
+      <div className="page-header">
+        <h1 className="page-title">Modalidades</h1>
         <button
           onClick={abrirModalCriar}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="btn btn-primary"
         >
           Nova Modalidade
         </button>
       </div>
 
       {data?.dados && data.dados.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded p-8 text-center">
-          <p className="text-gray-600">Nenhuma modalidade cadastrada</p>
+        <div className="empty-state">
+          <p>Nenhuma modalidade cadastrada</p>
         </div>
       ) : (
         <>
-          <div className="bg-white shadow-md rounded overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="table-container">
+            <table>
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Nome
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Descrição
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Ações
-                  </th>
+                  <th>Nome</th>
+                  <th>Descrição</th>
+                  <th>Status</th>
+                  <th className="text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {data?.dados.map((modalidade) => (
                   <tr key={modalidade.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="font-medium">
                       {modalidade.nome}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="text-brand-muted">
                       {modalidade.descricao || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs rounded ${
-                          modalidade.ativo
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
+                    <td>
+                      <span className={modalidade.ativo ? 'badge badge-active' : 'badge badge-inactive'}>
                         {modalidade.ativo ? 'Ativo' : 'Inativo'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => abrirModalEditar(modalidade)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        Editar
-                      </button>
-                      {modalidade.ativo ? (
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => handleDesativar(modalidade.id)}
-                          className="text-red-600 hover:text-red-900"
-                          disabled={desativarMutation.isPending}
+                          onClick={() => abrirModalEditar(modalidade)}
+                          className="btn btn-ghost btn-sm"
                         >
-                          Desativar
+                          Editar
                         </button>
-                      ) : (
-                        <button
-                          onClick={() => handleAtivar(modalidade.id)}
-                          className="text-green-600 hover:text-green-900"
-                          disabled={ativarMutation.isPending}
-                        >
-                          Ativar
-                        </button>
-                      )}
+                        {modalidade.ativo ? (
+                          <button
+                            onClick={() => handleDesativar(modalidade.id)}
+                            className="btn btn-danger btn-sm"
+                            disabled={desativarMutation.isPending}
+                          >
+                            Desativar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleAtivar(modalidade.id)}
+                            className="btn btn-success btn-sm"
+                            disabled={ativarMutation.isPending}
+                          >
+                            Ativar
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -200,21 +188,21 @@ export default function Modalidades() {
           </div>
 
           {data && data.totalPaginas > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6">
+            <div className="pagination">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="btn btn-secondary btn-sm"
               >
                 Anterior
               </button>
-              <span className="text-sm text-gray-600">
+              <span className="pagination-info">
                 Página {page} de {data.totalPaginas}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(data.totalPaginas, p + 1))}
                 disabled={page === data.totalPaginas}
-                className="px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="btn btn-secondary btn-sm"
               >
                 Próxima
               </button>
@@ -224,41 +212,35 @@ export default function Modalidades() {
       )}
 
       {modalAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2 className="text-xl font-bold text-brand-text mb-4">
               {modalidadeEditando ? 'Editar Modalidade' : 'Nova Modalidade'}
             </h2>
             {apiError && (
-              <div className="bg-red-50 border border-red-200 rounded p-3 mb-4">
-                <p className="text-red-800 text-sm">{apiError}</p>
+              <div className="alert alert-error mb-4">
+                <p>{apiError}</p>
               </div>
             )}
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="mb-4">
-                <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome *
-                </label>
+                <label htmlFor="nome">Nome *</label>
                 <input
                   {...register('nome')}
                   id="nome"
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {errors.nome && (
-                  <p className="text-red-500 text-sm mt-1">{errors.nome.message}</p>
+                  <p className="text-xs text-brand-danger mt-1">{errors.nome.message}</p>
                 )}
               </div>
 
               <div className="mb-4">
-                <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 mb-1">
-                  Descrição
-                </label>
+                <label htmlFor="descricao">Descrição</label>
                 <textarea
                   {...register('descricao')}
                   id="descricao"
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -266,14 +248,14 @@ export default function Modalidades() {
                 <button
                   type="button"
                   onClick={fecharModal}
-                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                  className="btn btn-secondary"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={criarMutation.isPending || atualizarMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="btn btn-primary"
                 >
                   {criarMutation.isPending || atualizarMutation.isPending
                     ? 'Salvando...'
@@ -286,7 +268,7 @@ export default function Modalidades() {
       )}
 
       {feedbackMessage && (
-        <div className="fixed top-4 right-4 bg-green-50 border border-green-200 text-green-800 rounded px-4 py-2 z-50">
+        <div className="toast toast-success">
           {feedbackMessage}
         </div>
       )}

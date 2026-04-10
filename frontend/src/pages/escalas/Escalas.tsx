@@ -79,42 +79,43 @@ const Escalas: React.FC = () => {
   const isLoadingDependencias = isLoadingCts || isLoadingModalidades || isLoadingProfissionais;
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Escalas</h1>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Escalas</h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mb-6">
+      <div className="card mb-6">
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label>CT</label>
-            <select {...register('ct_id', { valueAsNumber: true })} className="input" disabled={isLoadingDependencias}>
+            <select {...register('ct_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
               <option value="">Selecione</option>
               {cts.map((ct) => (
                 <option key={ct.id} value={ct.id}>{ct.nome}</option>
               ))}
             </select>
-            {errors.ct_id && <p className="text-red-600 text-sm mt-1">{errors.ct_id.message}</p>}
+            {errors.ct_id && <p className="text-xs text-brand-danger mt-1">{errors.ct_id.message}</p>}
           </div>
           <div>
             <label>Modalidade</label>
-            <select {...register('modalidade_id', { valueAsNumber: true })} className="input" disabled={isLoadingDependencias}>
+            <select {...register('modalidade_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
               <option value="">Selecione</option>
               {modalidades.map((m) => (
                 <option key={m.id} value={m.id}>{m.nome}</option>
               ))}
             </select>
-            {errors.modalidade_id && <p className="text-red-600 text-sm mt-1">{errors.modalidade_id.message}</p>}
+            {errors.modalidade_id && <p className="text-xs text-brand-danger mt-1">{errors.modalidade_id.message}</p>}
           </div>
           <div>
             <label>Profissional</label>
-            <select {...register('profissional_id', { valueAsNumber: true })} className="input" disabled={isLoadingDependencias}>
+            <select {...register('profissional_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
               <option value="">Selecione</option>
               {profissionais.map((p) => (
                 <option key={p.id} value={p.id}>{p.nome}</option>
               ))}
             </select>
-            {errors.profissional_id && <p className="text-red-600 text-sm mt-1">{errors.profissional_id.message}</p>}
+            {errors.profissional_id && <p className="text-xs text-brand-danger mt-1">{errors.profissional_id.message}</p>}
           </div>
         </div>
 
@@ -127,7 +128,7 @@ const Escalas: React.FC = () => {
                 <button
                   key={dia.valor}
                   type="button"
-                  className={`px-3 py-1 rounded border ${checked ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                  className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${checked ? 'bg-brand-primary text-white border-brand-primary' : 'bg-brand-bg text-brand-muted border-brand-border hover:text-brand-text hover:border-brand-primary/50'}`}
                   onClick={() => toggleDiaSemana(dia.valor)}
                 >
                   {dia.label}
@@ -135,18 +136,18 @@ const Escalas: React.FC = () => {
               );
             })}
           </div>
-          {errors.dias_semana && <p className="text-red-600 text-sm mt-1">{errors.dias_semana.message as string}</p>}
+          {errors.dias_semana && <p className="text-xs text-brand-danger mt-1">{errors.dias_semana.message as string}</p>}
         </div>
         <div className="grid grid-cols-2 gap-4 mt-4">
           <div>
             <label>Hora início</label>
-            <input type="time" {...register('hora_inicio')} className="input" />
-            {errors.hora_inicio && <p className="text-red-600 text-sm mt-1">{errors.hora_inicio.message}</p>}
+            <input type="time" {...register('hora_inicio')} />
+            {errors.hora_inicio && <p className="text-xs text-brand-danger mt-1">{errors.hora_inicio.message}</p>}
           </div>
           <div>
             <label>Hora fim</label>
-            <input type="time" {...register('hora_fim')} className="input" />
-            {errors.hora_fim && <p className="text-red-600 text-sm mt-1">{errors.hora_fim.message}</p>}
+            <input type="time" {...register('hora_fim')} />
+            {errors.hora_fim && <p className="text-xs text-brand-danger mt-1">{errors.hora_fim.message}</p>}
           </div>
         </div>
 
@@ -154,37 +155,40 @@ const Escalas: React.FC = () => {
           <button type="submit" disabled={isSubmitting || isLoadingDependencias} className="btn btn-primary">{isSubmitting ? 'Salvando...' : 'Salvar'}</button>
         </div>
       </form>
+      </div>
 
-      {isLoadingDependencias && <p>Carregando CTs, modalidades e profissionais...</p>}
-      {criarMut.isError && <p className="text-red-600">Não foi possível criar a escala. Verifique os dados e tente novamente.</p>}
-      {isLoading && <p>Carregando...</p>}
-      {isError && <p>Erro ao carregar escalas.</p>}
-      {!isLoading && escalas.length === 0 && <p>Nenhuma escala cadastrada.</p>}
+      {isLoadingDependencias && <p className="text-brand-muted">Carregando CTs, modalidades e profissionais...</p>}
+      {criarMut.isError && <p className="text-brand-danger">Não foi possível criar a escala. Verifique os dados e tente novamente.</p>}
+      {isLoading && <p className="text-brand-muted">Carregando...</p>}
+      {isError && <p className="text-brand-danger">Erro ao carregar escalas.</p>}
+      {!isLoading && escalas.length === 0 && <div className="empty-state">Nenhuma escala cadastrada.</div>}
       {escalas.length > 0 && (
-        <table className="min-w-full bg-white">
+        <div className="table-container">
+        <table>
           <thead>
             <tr>
-              <th className="px-4 py-2">CT</th>
-              <th className="px-4 py-2">Modalidade</th>
-              <th className="px-4 py-2">Profissional</th>
-              <th className="px-4 py-2">Dias</th>
-              <th className="px-4 py-2">Horário</th>
-              <th className="px-4 py-2">Status</th>
+              <th>CT</th>
+              <th>Modalidade</th>
+              <th>Profissional</th>
+              <th>Dias</th>
+              <th>Horário</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {escalas.map((e: any) => (
               <tr key={e.id}>
-                <td className="px-4 py-2">{ctsMap.get(e.ct_id) || e.ct_id}</td>
-                <td className="px-4 py-2">{modalidadesMap.get(e.modalidade_id) || e.modalidade_id}</td>
-                <td className="px-4 py-2">{profissionaisMap.get(e.profissional_id) || e.profissional_id}</td>
-                <td className="px-4 py-2">{(e.dias_semana || []).map((d: number) => DIAS_SEMANA.find((x) => x.valor === d)?.label || d).join(', ')}</td>
-                <td className="px-4 py-2">{e.hora_inicio} - {e.hora_fim}</td>
-                <td className="px-4 py-2">{e.ativo ? 'Ativo' : 'Inativo'}</td>
+                <td>{ctsMap.get(e.ct_id) || e.ct_id}</td>
+                <td>{modalidadesMap.get(e.modalidade_id) || e.modalidade_id}</td>
+                <td>{profissionaisMap.get(e.profissional_id) || e.profissional_id}</td>
+                <td>{(e.dias_semana || []).map((d: number) => DIAS_SEMANA.find((x) => x.valor === d)?.label || d).join(', ')}</td>
+                <td>{e.hora_inicio} - {e.hora_fim}</td>
+                <td><span className={e.ativo ? 'badge badge-active' : 'badge badge-inactive'}>{e.ativo ? 'Ativo' : 'Inativo'}</span></td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

@@ -79,53 +79,58 @@ const Alunos: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Alunos</h1>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Alunos</h1>
         <button onClick={() => { setShowForm(true); setEditing(null); reset(); }} className="btn btn-primary">Novo Aluno</button>
       </div>
 
-      {isLoading && <p>Carregando...</p>}
-      {isError && <p>Erro ao carregar alunos.</p>}
+      {isLoading && <p className="text-brand-muted">Carregando...</p>}
+      {isError && <p className="text-brand-danger">Erro ao carregar alunos.</p>}
 
-      {!isLoading && alunos.length === 0 && <p>Nenhum aluno cadastrado.</p>}
+      {!isLoading && alunos.length === 0 && <div className="empty-state">Nenhum aluno cadastrado.</div>}
 
       {alunos.length > 0 && (
-        <table className="min-w-full bg-white">
+        <div className="table-container">
+        <table>
           <thead>
             <tr>
-              <th className="px-4 py-2">Nome</th>
-              <th className="px-4 py-2">CPF</th>
-              <th className="px-4 py-2">Telefone</th>
-              <th className="px-4 py-2">CT</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Ações</th>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>Telefone</th>
+              <th>CT</th>
+              <th>Status</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             {alunos.map((a: any) => (
-              <tr key={a.id} className="border-t">
-                <td className="px-4 py-2">{a.nome}</td>
-                <td className="px-4 py-2">{a.cpf || '-'}</td>
-                <td className="px-4 py-2">{a.telefone || '-'}</td>
-                <td className="px-4 py-2">{(a.ct_id != null && ctById[String(a.ct_id)]) ? ctById[String(a.ct_id)] : '-'}</td>
-                <td className="px-4 py-2">{a.ativo ? 'Ativo' : 'Inativo'}</td>
-                <td className="px-4 py-2">
-                  <button onClick={() => handleEdit(a.id)} className="btn btn-secondary mr-2">Editar</button>
+              <tr key={a.id}>
+                <td>{a.nome}</td>
+                <td>{a.cpf || '-'}</td>
+                <td>{a.telefone || '-'}</td>
+                <td>{(a.ct_id != null && ctById[String(a.ct_id)]) ? ctById[String(a.ct_id)] : '-'}</td>
+                <td><span className={a.ativo ? 'badge badge-active' : 'badge badge-inactive'}>{a.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td>
+                  <div className="flex items-center gap-2">
+                  <button onClick={() => handleEdit(a.id)} className="btn btn-secondary btn-sm">Editar</button>
                     {a.ativo ? (
-                      <button onClick={() => { if (confirm('Confirma desativar?')) desativar.mutate(a.id); }} className="btn btn-danger">Desativar</button>
+                      <button onClick={() => { if (confirm('Confirma desativar?')) desativar.mutate(a.id); }} className="btn btn-danger btn-sm">Desativar</button>
                     ) : (
-                      <button onClick={() => { if (confirm('Confirma ativar?')) ativar.mutate(a.id); }} className="btn btn-success">Ativar</button>
+                      <button onClick={() => { if (confirm('Confirma ativar?')) ativar.mutate(a.id); }} className="btn btn-success btn-sm">Ativar</button>
                     )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       {showForm && (
-        <div className="mt-4 p-4 border rounded bg-gray-50">
+        <div className="modal-overlay">
+        <div className="modal-content max-w-lg">
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* CT selector: always show the select so user chooses by name. */}
             <div className="mb-2">
@@ -156,7 +161,7 @@ const Alunos: React.FC = () => {
             <div className="mb-2">
               <label className="block" htmlFor="nome">Nome</label>
               <input id="nome" {...register('nome')} className="input" />
-              {errors.nome && <p className="text-red-600">{errors.nome?.message}</p>}
+              {errors.nome && <p className="text-xs text-brand-danger mt-1">{errors.nome?.message}</p>}
             </div>
             <div className="mb-2 grid grid-cols-2 gap-2">
               <div>
@@ -186,15 +191,16 @@ const Alunos: React.FC = () => {
               <label className="block" htmlFor="telefone_responsavel">Telefone do responsável</label>
               <input id="telefone_responsavel" {...register('telefone_responsavel')} className="input" />
             </div>
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex justify-end gap-3 mt-4">
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn btn-secondary">Cancelar</button>
               <button
                 type="submit"
                 disabled={isSubmitting || (!ctsLoading && cts.length === 0)}
                 className="btn btn-primary"
               >{editing ? 'Salvar' : 'Criar'}</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn">Cancelar</button>
             </div>
           </form>
+        </div>
         </div>
       )}
 

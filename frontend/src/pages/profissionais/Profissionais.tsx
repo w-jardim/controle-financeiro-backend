@@ -52,81 +52,89 @@ const Profissionais: React.FC = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Profissionais</h1>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Profissionais</h1>
         <button onClick={() => { setShowForm(true); setEditing(null); reset(); }} className="btn btn-primary">Novo</button>
       </div>
 
-      {isLoading && <p>Carregando...</p>}
-      {isError && <p>Erro ao carregar profissionais.</p>}
+      {isLoading && <p className="text-brand-muted">Carregando...</p>}
+      {isError && <p className="text-brand-danger">Erro ao carregar profissionais.</p>}
 
-      {!isLoading && profissionais.length === 0 && <p>Sem profissionais cadastrados.</p>}
+      {!isLoading && profissionais.length === 0 && <div className="empty-state">Sem profissionais cadastrados.</div>}
 
       {profissionais.length > 0 && (
-        <table className="min-w-full bg-white">
+        <div className="table-container">
+        <table>
           <thead>
             <tr>
-              <th className="px-4 py-2">Nome</th>
-              <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">Telefone</th>
-              <th className="px-4 py-2">Especialidade</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Ações</th>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Telefone</th>
+              <th>Especialidade</th>
+              <th>Status</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
             {profissionais.map((p: any) => (
-              <tr key={p.id} className="border-t">
-                <td className="px-4 py-2">{p.nome}</td>
-                <td className="px-4 py-2">{p.email || '-'}</td>
-                <td className="px-4 py-2">{p.telefone || '-'}</td>
-                <td className="px-4 py-2">{p.especialidade || '-'}</td>
-                <td className="px-4 py-2">{p.ativo ? 'Ativo' : 'Inativo'}</td>
-                <td className="px-4 py-2">
-                  <button onClick={() => handleEdit(p.id)} className="btn btn-secondary mr-2">Editar</button>
+              <tr key={p.id}>
+                <td>{p.nome}</td>
+                <td className="text-brand-muted">{p.email || '-'}</td>
+                <td>{p.telefone || '-'}</td>
+                <td>{p.especialidade || '-'}</td>
+                <td><span className={p.ativo ? 'badge badge-active' : 'badge badge-inactive'}>{p.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                <td>
+                  <div className="flex items-center gap-2">
+                  <button onClick={() => handleEdit(p.id)} className="btn btn-secondary btn-sm">Editar</button>
                   {p.ativo ? (
-                    <button onClick={() => desativar.mutate(p.id)} className="btn btn-danger">Desativar</button>
+                    <button onClick={() => desativar.mutate(p.id)} className="btn btn-danger btn-sm">Desativar</button>
                   ) : (
-                    <button onClick={() => ativar.mutate(p.id)} className="btn btn-success">Ativar</button>
+                    <button onClick={() => ativar.mutate(p.id)} className="btn btn-success btn-sm">Ativar</button>
                   )}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       {showForm && (
-        <div className="mt-4 p-4 border rounded bg-gray-50">
+        <div className="modal-overlay">
+        <div className="modal-content max-w-lg">
+          <h2 className="text-xl font-bold text-brand-text mb-4">{editing ? 'Editar Profissional' : 'Novo Profissional'}</h2>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-2">
-              <label className="block">Nome</label>
-              <input {...register('nome')} className="input" />
-              {errors.nome && <p className="text-red-600">{errors.nome.message}</p>}
+            <div className="mb-3">
+              <label>Nome</label>
+              <input {...register('nome')} />
+              {errors.nome && <p className="text-xs text-brand-danger mt-1">{errors.nome.message}</p>}
             </div>
-            <div className="mb-2">
-              <label className="block">Email</label>
-              <input {...register('email')} className="input" />
-              {errors.email && <p className="text-red-600">{errors.email.message}</p>}
+            <div className="mb-3">
+              <label>Email</label>
+              <input {...register('email')} />
+              {errors.email && <p className="text-xs text-brand-danger mt-1">{errors.email.message}</p>}
             </div>
-            <div className="mb-2">
-              <label className="block">Telefone</label>
-              <input {...register('telefone')} className="input" />
-              {errors.telefone && <p className="text-red-600">{errors.telefone.message}</p>}
+            <div className="mb-3">
+              <label>Telefone</label>
+              <input {...register('telefone')} />
+              {errors.telefone && <p className="text-xs text-brand-danger mt-1">{errors.telefone.message}</p>}
             </div>
-            <div className="mb-2">
-              <label className="block">Especialidade</label>
-              <input {...register('especialidade')} className="input" />
-              {errors.especialidade && <p className="text-red-600">{errors.especialidade.message}</p>}
+            <div className="mb-4">
+              <label>Especialidade</label>
+              <input {...register('especialidade')} />
+              {errors.especialidade && <p className="text-xs text-brand-danger mt-1">{errors.especialidade.message}</p>}
             </div>
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn btn-secondary">Cancelar</button>
               <button type="submit" className="btn btn-primary">{editing ? 'Salvar' : 'Criar'}</button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null); reset(); }} className="btn">Cancelar</button>
             </div>
           </form>
         </div>
+        </div>
       )}
+
 
     </div>
   );

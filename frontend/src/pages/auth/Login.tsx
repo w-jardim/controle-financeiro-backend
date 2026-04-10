@@ -36,40 +36,40 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded shadow w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4">Entrar</h2>
-        {errorMsg && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">{errorMsg}</div>}
-        <label className="block mb-3">
-          <span className="text-sm font-medium">Email</span>
+    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+      <form onSubmit={handleSubmit(onSubmit)} className="card w-full max-w-md">
+        <h2 className="text-2xl font-bold text-brand-text mb-6">Entrar</h2>
+        {errorMsg && <div className="alert alert-error mb-4">{errorMsg}</div>}
+        <label className="block mb-4">
+          Email
           <input
-            className="mt-1 block w-full border rounded p-2"
+            className="mt-1"
             {...register('email')}
             disabled={loading}
           />
-          {errors.email && <span className="text-xs text-red-600">{errors.email.message}</span>}
+          {errors.email && <span className="text-xs text-brand-danger mt-1">{errors.email.message}</span>}
         </label>
-        <label className="block mb-4">
-          <span className="text-sm font-medium">Senha</span>
+        <label className="block mb-5">
+          Senha
           <input
             type="password"
-            className="mt-1 block w-full border rounded p-2"
+            className="mt-1"
             {...register('senha')}
             disabled={loading}
           />
-          {errors.senha && <span className="text-xs text-red-600">{errors.senha.message}</span>}
+          {errors.senha && <span className="text-xs text-brand-danger mt-1">{errors.senha.message}</span>}
         </label>
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50 mb-3"
+          className="btn btn-primary w-full mb-4"
           disabled={loading}
         >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
 
         <div className="text-center text-sm">
-          <span className="text-gray-600">Não tem conta? </span>
-          <Link to="/register" className="text-blue-600 hover:underline">
+          <span className="text-brand-muted">Não tem conta? </span>
+          <Link to="/register" className="text-brand-primary hover:underline">
             Criar conta
           </Link>
         </div>
