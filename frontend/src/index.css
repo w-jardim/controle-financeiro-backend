@@ -9,17 +9,66 @@
     height: 100%;
   }
 
+  :root {
+    /* Light theme (default) */
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --border: #e6e9ee;
+    --text: #0f1724;
+    --muted: #6b7280;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #c1121f;
+    --danger-hover: #a10e1a;
+    --premium: #d4af37;
+    --success: #16a34a;
+    --success-hover: #15803d;
+  }
+
+  .theme-dark {
+    /* Dark theme overrides */
+    --bg: #0B0B0B;
+    --surface: #0F172A;
+    --border: #2B2B2B;
+    --text: #E5E7EB;
+    --muted: #9CA3AF;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --danger: #C1121F;
+    --danger-hover: #A10E1A;
+    --premium: #D4AF37;
+    --success: #22C55E;
+    --success-hover: #16A34A;
+  }
+
   body {
-    @apply bg-brand-bg text-brand-text antialiased;
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   /* scrollbar */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0B0B0B; }
-  ::-webkit-scrollbar-thumb { background: #2B2B2B; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #3B82F6; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 }
+
+/* Map legacy brand utility classes to theme variables so components keep working */
+.bg-brand-bg { background-color: var(--bg) !important; }
+.bg-brand-surface { background-color: var(--surface) !important; }
+.border-brand-border { border-color: var(--border) !important; }
+.text-brand-text { color: var(--text) !important; }
+.text-brand-muted { color: var(--muted) !important; }
+.text-brand-primary { color: var(--primary) !important; }
+.bg-brand-primary { background-color: var(--primary) !important; }
+.border-brand-primary { border-color: var(--primary) !important; }
+.bg-brand-danger { background-color: var(--danger) !important; }
+.border-brand-danger { border-color: var(--danger) !important; }
+.placeholder-brand-muted::placeholder { color: var(--muted) !important; }
+
 
 /* ── Components ───────────────────────────────────── */
 
@@ -33,17 +82,31 @@
            border border-brand-border bg-brand-surface text-brand-text
            hover:bg-brand-border focus:outline-none focus:ring-2 focus:ring-brand-primary/40
            disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none;
+    /* use theme variables to ensure light/dark consistency */
+    background-color: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
   }
 
   .btn-primary {
     @apply bg-brand-primary border-brand-primary text-white
            hover:bg-brand-primary-hover hover:border-brand-primary-hover
            focus:ring-brand-primary/50;
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
   }
 
   .btn-secondary {
-    @apply bg-brand-surface border-brand-border text-brand-text
-           hover:bg-brand-border;
+    /* ensure visible on light background */
+    background-color: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary {
+      @apply bg-brand-surface border-brand-border text-brand-text
+        hover:bg-brand-border;
   }
 
   .btn-danger {
@@ -83,12 +146,17 @@
   input[type="search"],
   select,
   textarea {
-    @apply w-full px-3 py-2 text-sm
-           bg-brand-bg border border-brand-border rounded-lg
-           text-brand-text placeholder-brand-muted
-           transition-colors duration-150
-           focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/40
-           disabled:opacity-40 disabled:cursor-not-allowed;
+        @apply w-full px-3 py-2 text-sm
+          bg-brand-bg border border-brand-border rounded-lg
+          text-brand-text placeholder-brand-muted
+          transition-colors duration-150
+          focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary/40
+          disabled:opacity-40 disabled:cursor-not-allowed;
+        background-color: var(--surface);
+        border-color: var(--border);
+        color: var(--text);
+        caret-color: var(--primary);
+      }
   }
 
   /* ─ Labels ─ */
@@ -99,11 +167,17 @@
   /* ─ Cards / Surfaces ─ */
   .card {
     @apply bg-brand-surface border border-brand-border rounded-xl p-6;
+    background-color: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+    box-shadow: 0 6px 20px rgba(16,24,40,0.06);
   }
 
   /* ─ Tables ─ */
   .table-container {
     @apply bg-brand-surface border border-brand-border rounded-xl overflow-hidden;
+    background-color: var(--surface);
+    border-color: var(--border);
   }
 
   table {
@@ -157,13 +231,18 @@
   }
 
   .modal-content {
-    @apply bg-brand-surface border border-brand-border
-           rounded-xl p-6 w-full max-w-md shadow-2xl;
+      @apply bg-brand-surface border border-brand-border
+        rounded-xl p-6 w-full max-w-md shadow-2xl;
+      background-color: var(--surface);
+      border-color: var(--border);
   }
 
   /* ─ Alert / Feedback ─ */
   .alert {
     @apply rounded-lg border px-4 py-3 text-sm;
+    background-color: transparent;
+    border-color: var(--border);
+    color: var(--text);
   }
 
   .alert-error {

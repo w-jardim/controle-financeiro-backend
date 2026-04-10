@@ -36,14 +36,14 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-bg">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <form onSubmit={handleSubmit(onSubmit)} className="card w-full max-w-md">
         <h2 className="text-2xl font-bold text-brand-text mb-6">Entrar</h2>
         {errorMsg && <div className="alert alert-error mb-4">{errorMsg}</div>}
         <label className="block mb-4">
           Email
           <input
-            className="mt-1"
+            className="input mt-1"
             {...register('email')}
             disabled={loading}
           />
@@ -53,7 +53,7 @@ export default function Login() {
           Senha
           <input
             type="password"
-            className="mt-1"
+            className="input mt-1"
             {...register('senha')}
             disabled={loading}
           />
