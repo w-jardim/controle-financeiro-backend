@@ -1,0 +1,50 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ctflow-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ctflow_mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - ctflow-net
+
+  backend:
+    build:
+      context: ./backend
+    container_name: ctflow-backend
+    restart: always
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3001:3000"
+    networks:
+      - ctflow-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: ctflow-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:8087:80"
+    networks:
+      - ctflow-net
+
+volumes:
+  ctflow_mysql_data:
+
+networks:
+  ctflow-net:
+    driver: bridge
