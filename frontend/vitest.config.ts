@@ -8,9 +8,11 @@ export default defineConfig({
     },
   },
   test: {
+    env: {
+      NODE_ENV: 'test',
+    },
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/setupTests.ts'],
   },
 });
-
