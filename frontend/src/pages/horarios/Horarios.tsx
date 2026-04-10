@@ -115,7 +115,7 @@ const Horarios: React.FC = () => {
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="mb-3">
               <label htmlFor="modalidade">Modalidade</label>
-              <select id="modalidade" {...register('modalidade_id')}> 
+              <select id="modalidade" className="input" {...register('modalidade_id')}> 
                 <option value="">Selecione uma modalidade</option>
                 {modalidades.map((m: any) => <option key={m.id} value={m.id}>{m.nome}</option>)}
               </select>
@@ -124,7 +124,7 @@ const Horarios: React.FC = () => {
 
             <div className="mb-3">
               <label htmlFor="profissional">Profissional</label>
-              <select id="profissional" {...register('profissional_id')}>
+              <select id="profissional" className="input" {...register('profissional_id')}>
                 <option value="">Selecione um profissional</option>
                 {profissionais.map((p: any) => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>
@@ -134,18 +134,18 @@ const Horarios: React.FC = () => {
             <div className="mb-3 grid grid-cols-3 gap-3">
               <div>
                 <label>Dia da semana</label>
-                <select {...register('dia_semana')}>
+                <select className="input" {...register('dia_semana')}>
                   <option value="">Selecione</option>
                   {dias.map((d, i) => <option key={i} value={i}>{d}</option>)}
                 </select>
               </div>
               <div>
                 <label>Hora início</label>
-                <input type="time" {...register('hora_inicio')} />
+                <input className="input" type="time" {...register('hora_inicio')} />
               </div>
               <div>
                 <label>Hora fim</label>
-                <input type="time" {...register('hora_fim')} />
+                <input className="input" type="time" {...register('hora_fim')} />
               </div>
             </div>
 

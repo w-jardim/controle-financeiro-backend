@@ -87,9 +87,9 @@ const Escalas: React.FC = () => {
       <div className="card mb-6">
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-3 gap-4">
-          <div>
+            <div>
             <label>CT</label>
-            <select {...register('ct_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
+            <select className="input" {...register('ct_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
               <option value="">Selecione</option>
               {cts.map((ct) => (
                 <option key={ct.id} value={ct.id}>{ct.nome}</option>
@@ -97,9 +97,9 @@ const Escalas: React.FC = () => {
             </select>
             {errors.ct_id && <p className="text-xs text-brand-danger mt-1">{errors.ct_id.message}</p>}
           </div>
-          <div>
+            <div>
             <label>Modalidade</label>
-            <select {...register('modalidade_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
+            <select className="input" {...register('modalidade_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
               <option value="">Selecione</option>
               {modalidades.map((m) => (
                 <option key={m.id} value={m.id}>{m.nome}</option>
@@ -107,9 +107,9 @@ const Escalas: React.FC = () => {
             </select>
             {errors.modalidade_id && <p className="text-xs text-brand-danger mt-1">{errors.modalidade_id.message}</p>}
           </div>
-          <div>
+            <div>
             <label>Profissional</label>
-            <select {...register('profissional_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
+            <select className="input" {...register('profissional_id', { valueAsNumber: true })} disabled={isLoadingDependencias}>
               <option value="">Selecione</option>
               {profissionais.map((p) => (
                 <option key={p.id} value={p.id}>{p.nome}</option>
@@ -139,14 +139,14 @@ const Escalas: React.FC = () => {
           {errors.dias_semana && <p className="text-xs text-brand-danger mt-1">{errors.dias_semana.message as string}</p>}
         </div>
         <div className="grid grid-cols-2 gap-4 mt-4">
-          <div>
+            <div>
             <label>Hora início</label>
-            <input type="time" {...register('hora_inicio')} />
+            <input className="input" type="time" {...register('hora_inicio')} />
             {errors.hora_inicio && <p className="text-xs text-brand-danger mt-1">{errors.hora_inicio.message}</p>}
           </div>
           <div>
             <label>Hora fim</label>
-            <input type="time" {...register('hora_fim')} />
+            <input className="input" type="time" {...register('hora_fim')} />
             {errors.hora_fim && <p className="text-xs text-brand-danger mt-1">{errors.hora_fim.message}</p>}
           </div>
         </div>

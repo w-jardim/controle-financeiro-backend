@@ -108,22 +108,22 @@ const Profissionais: React.FC = () => {
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="mb-3">
               <label>Nome</label>
-              <input {...register('nome')} />
+              <input className="input" {...register('nome')} />
               {errors.nome && <p className="text-xs text-brand-danger mt-1">{errors.nome.message}</p>}
             </div>
             <div className="mb-3">
               <label>Email</label>
-              <input {...register('email')} />
+              <input className="input" {...register('email')} />
               {errors.email && <p className="text-xs text-brand-danger mt-1">{errors.email.message}</p>}
             </div>
             <div className="mb-3">
               <label>Telefone</label>
-              <input {...register('telefone')} />
+              <input className="input" {...register('telefone')} />
               {errors.telefone && <p className="text-xs text-brand-danger mt-1">{errors.telefone.message}</p>}
             </div>
             <div className="mb-4">
               <label>Especialidade</label>
-              <input {...register('especialidade')} />
+              <input className="input" {...register('especialidade')} />
               {errors.especialidade && <p className="text-xs text-brand-danger mt-1">{errors.especialidade.message}</p>}
             </div>
             <div className="flex justify-end gap-3">

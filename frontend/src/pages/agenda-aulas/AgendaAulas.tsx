@@ -31,29 +31,29 @@ const AgendaAulas: React.FC = () => {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label>CT id</label>
-            <input type="number" value={form.ct_id || ''} onChange={(e) => setForm({ ...form, ct_id: Number(e.target.value) })} />
+            <input className="input" type="number" value={form.ct_id || ''} onChange={(e) => setForm({ ...form, ct_id: Number(e.target.value) })} />
           </div>
           <div>
             <label>Modalidade id</label>
-            <input type="number" value={form.modalidade_id || ''} onChange={(e) => setForm({ ...form, modalidade_id: Number(e.target.value) })} />
+            <input className="input" type="number" value={form.modalidade_id || ''} onChange={(e) => setForm({ ...form, modalidade_id: Number(e.target.value) })} />
           </div>
           <div>
             <label>Profissional id</label>
-            <input type="number" value={form.profissional_id || ''} onChange={(e) => setForm({ ...form, profissional_id: Number(e.target.value) })} />
+            <input className="input" type="number" value={form.profissional_id || ''} onChange={(e) => setForm({ ...form, profissional_id: Number(e.target.value) })} />
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div>
             <label>Data</label>
-            <input type="date" value={form.data_aula || ''} onChange={(e) => setForm({ ...form, data_aula: e.target.value })} />
+            <input className="input" type="date" value={form.data_aula || ''} onChange={(e) => setForm({ ...form, data_aula: e.target.value })} />
           </div>
           <div>
             <label>Hora início</label>
-            <input type="time" value={form.hora_inicio || ''} onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })} />
+            <input className="input" type="time" value={form.hora_inicio || ''} onChange={(e) => setForm({ ...form, hora_inicio: e.target.value })} />
           </div>
           <div>
             <label>Hora fim</label>
-            <input type="time" value={form.hora_fim || ''} onChange={(e) => setForm({ ...form, hora_fim: e.target.value })} />
+            <input className="input" type="time" value={form.hora_fim || ''} onChange={(e) => setForm({ ...form, hora_fim: e.target.value })} />
           </div>
         </div>
         <div className="mt-4">
