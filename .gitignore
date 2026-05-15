@@ -30,3 +30,14 @@ build/
 .env
 node_modules/
 dist/
+
+# Agentes / IA / ferramentas auxiliares locais
+.cursor/
+.github/
+AGENTS.md
+CLAUDE.md
+claude/
+codex/
+prompts/
+skills/
+docs/ai-governance.md

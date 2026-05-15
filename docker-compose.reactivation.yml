@@ -1,0 +1,150 @@
+# CTFlow — Isolated Reactivation Override
+#
+# Status: PROPOSAL ONLY — not approved to start.
+# Generated: 2026-05-15 (Phase 6B)
+#
+# Purpose:
+#   A standalone Compose definition for a first, isolated, low-blast-radius
+#   reactivation of CTFlow on a host that is already running VirAzul and
+#   Orchestrator stacks. This file is NOT a layered override of the existing
+#   docker-compose.*.yml files; it is intentionally self-contained so it cannot
+#   accidentally merge with, reuse, or destroy resources owned by other
+#   profiles.
+#
+# Safety contract (all enforced below):
+#   - All published host ports bind to 127.0.0.1 only.
+#   - No port reuses VirAzul (3000, 3001, 3307, 3308, 5173, 8080) or
+#     Orchestrator (3002, 3003) bindings.
+#   - MySQL is not exposed publicly; loopback bind is provided only for
+#     local validation tooling.
+#   - The Compose project name is pinned to `ctflow-reactivation`, so
+#     volumes/networks created here will be namespaced under
+#     `ctflow-reactivation_*` and will NOT touch the residual
+#     `ctflow-app_ctflow_mysql_data` volume.
+#   - A fresh, dedicated volume name is used. The residual CTFlow volume is
+#     neither mounted nor destroyed by this file.
+#   - `restart: "no"` everywhere, so a misconfigured first boot will not
+#     re-loop and consume resources.
+#
+# Usage (NOT YET APPROVED — do not execute until Phase 7 sign-off):
+#   docker compose -f docker-compose.reactivation.yml config
+#
+# References:
+#   - docs/compose-reactivation-override.md (rationale and reviewer checklist)
+#   - docs/port-allocation-plan.md
+#   - docs/runtime-port-map.md
+#   - docs/reactivation-readiness.md
+
+name: ctflow-reactivation
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: ctflow-reactivation-mysql
+    restart: "no"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    # Loopback-only bind. Not exposed to other hosts. Validation tooling
+    # (mysql client, ad-hoc inspection) can reach it via 127.0.0.1:3318.
+    ports:
+      - "127.0.0.1:3318:3306"
+    volumes:
+      # Dedicated reactivation volume. Distinct from the residual
+      # `ctflow-app_ctflow_mysql_data` volume to honor the "no mount or
+      # destroy without explicit decision" rule.
+      - reactivation_mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - ctflow-reactivation-net
+    healthcheck:
+      # CMD-SHELL with $$ escaping so the root password is read from the
+      # container's runtime env at exec time and is NOT embedded into the
+      # `docker compose config` resolved output.
+      test:
+        - "CMD-SHELL"
+        - "mysqladmin ping -h 127.0.0.1 -u root --password=\"$$MYSQL_ROOT_PASSWORD\" --silent"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ctflow-reactivation-backend
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3101:3000"
+    networks:
+      - ctflow-reactivation-net
+    healthcheck:
+      # Tentative; presumes a usable HTTP client in the runtime image.
+      # Confirm `curl` is present in the backend image before approving start.
+      # The /ping endpoint is one of the documented health routes.
+      test:
+        - "CMD-SHELL"
+        - "curl -fsS http://127.0.0.1:3000/ping >/dev/null || exit 1"
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: ctflow-reactivation-frontend
+    restart: "no"
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8187:80"
+    networks:
+      - ctflow-reactivation-net
+    healthcheck:
+      # Tentative; nginx:1.27-alpine ships busybox `wget`.
+      test:
+        - "CMD-SHELL"
+        - "wget -qO- http://127.0.0.1:80/ >/dev/null || exit 1"
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Optional DB UI for validation. Disabled by default; enable only by
+  # explicit reviewer approval. Loopback-only when enabled.
+  #
+  # cloudbeaver:
+  #   image: dbeaver/cloudbeaver:latest
+  #   container_name: ctflow-reactivation-cloudbeaver
+  #   restart: "no"
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #   ports:
+  #     - "127.0.0.1:8188:8978"
+  #   networks:
+  #     - ctflow-reactivation-net
+
+volumes:
+  # Dedicated, fresh volume. Does NOT reuse the residual CTFlow volume
+  # `ctflow-app_ctflow_mysql_data`. Under project name
+  # `ctflow-reactivation` this resolves to
+  # `ctflow-reactivation_reactivation_mysql_data`.
+  reactivation_mysql_data:
+
+networks:
+  ctflow-reactivation-net:
+    driver: bridge
